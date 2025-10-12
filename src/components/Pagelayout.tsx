@@ -12,12 +12,12 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', minHeight: '90vh', backgroundColor: '#f5f5f5',minWidth:'40vh' }}>
       <SideNavbar
         sideNavActive={sideNavActive}
         handleSideNavActive={handleSideNavActive}
       />
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'center' }}>
         <Header onMenuClick={handleSideNavActive} />
         <Box
           component="main"
@@ -25,8 +25,12 @@ const Layout: React.FC = () => {
             flexGrow: 1,
             p: 3,
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'center',
             backgroundColor: '#ffffff',
+            minHeight: '90vh',
+            overflow: 'hidden',
+            marginTop: '30px',
+            width:'50vh'
           }}
         >
           <Card
@@ -38,7 +42,7 @@ const Layout: React.FC = () => {
               borderRadius: 2,
               p: 3,
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: 'center',
               overflow: 'auto',
               backgroundColor: '#F8F9FC',
               

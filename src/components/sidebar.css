@@ -1,0 +1,19 @@
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem; /* Increase this */
+  color: #f5f5f5;
+  cursor: pointer;
+  padding: 10px 15px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.tab.active {
+  background-color: #234b88;
+  font-weight: 600;
+}
+.tab svg {
+  font-size: 1.4rem; /* slightly larger icon */
+}

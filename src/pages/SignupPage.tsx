@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   Box,
   TextField,
@@ -14,11 +12,14 @@ import {
   CircularProgress,
 } from '@mui/material';
 //import { Google as GoogleIcon } from '@mui/icons-material';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
+  const [confirm, setConfirm] = useState('');
+  const [terms, setTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,56 +28,60 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    // --- Frontend validation ---
+    if (password !== confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (!terms) {
+      setError('You must agree to the terms and conditions.');
+      return;
+    }
+
     setLoading(true);
 
+    // --- API INTEGRATION START ---
     try {
-      // API request
-      const response = await axios.post(
-        'https://Roy256.pythonanywhere.com/api/auth/login/',
-        { email, password }
-      );
+      // Replace the URL with your backend signup endpoint
+      const response = await fetch('https://your-api.com/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-      const { access, refresh, user } = response.data;
-
-      // Save tokens and user info
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-      if (remember) localStorage.setItem('remember_me', 'true');
-      else localStorage.removeItem('remember_me');
-
-      localStorage.setItem('user', JSON.stringify(user));
-
-      // Redirect based on password status
-      if (user.password_needs_change) {
-        navigate('/reset-password');
-      } else {
-        navigate('/dashboard');
-      }
-    } catch (err: any) {
-      if (err.response) {
-        setError(err.response.data.detail || 'Login failed. Please try again.');
-      } else {
-        setError('Network error. Please try again.');
-      }
-    } finally {
+      const data = await response.json();
       setLoading(false);
+
+      if (data.success) {
+        // On successful signup, redirect to login page
+        navigate('/');
+      } else {
+        setError(data.message || 'Signup failed. Please try again.');
+      }
+    } catch (err) {
+      setLoading(false);
+      setError('Network error. Please try again.');
+      console.error(err);
     }
+    // --- API INTEGRATION END ---
   };
 
-  // const handleGoogleSignIn = () => {
-  //   setError('Google Sign-In is not available yet. Please use email and password.');
+  // const handleGoogleSignUp = () => {
+  //   // --- API INTEGRATION POINT FOR GOOGLE SIGN-UP ---
+  //   // Here you would trigger Google OAuth flow
+  //   setError('Google Sign-Up is not available yet.');
   // };
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '20vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         background: '#FF3B3B',
-        backgroundBlendMode: 'saturation',
-        padding: 2,
+        padding: 12,
       }}
     >
       <Paper
@@ -101,11 +106,25 @@ export default function LoginPage() {
             backgroundColor: '#fff',
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 900, mb: 1, color: '#FF3B3B' }}>
-           ✔️YOUR LIBRARY MANAGER!
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 900,
+              mb: 1,
+              color: '#FF3B3B',
+            }}
+          >
+            ✔️CREATE AN ACCOUNT!
           </Typography>
-          <Typography variant="body2" sx={{ mb: 4, color: '#666' }}>
-            Welcome back! Please enter your details.
+
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 4,
+              color: '#666',
+            }}
+          >
+            Join our Library System For Easy Management today!
           </Typography>
 
           {error && (
@@ -116,16 +135,29 @@ export default function LoginPage() {
 
           <Box component="form" onSubmit={handleSubmit}>
             <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
+              Full Name
+            </Typography>
+            <TextField
+              fullWidth
+              placeholder="Enter your full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+              required
+              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
               Email
             </Typography>
             <TextField
               fullWidth
               placeholder="Enter your email"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
               required
-              type="email"
               sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
@@ -140,30 +172,39 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               required
+              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
+              Confirm Password
+            </Typography>
+            <TextField
+              fullWidth
+              type="password"
+              placeholder="**********"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              disabled={loading}
+              required
               sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                    size="small"
-                    disabled={loading}
-                  />
-                }
-                label={<Typography variant="body2" sx={{ color: '#666' }}>Remember me</Typography>}
-              />
-              <Link
-                component={RouterLink}
-                to="/reset-password"
-                underline="none"
-                sx={{ fontSize: '0.875rem', color: '#666', '&:hover': { color: '#FF3B3B' } }}
-              >
-                Forgot password
-              </Link>
-            </Box>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={terms}
+                  onChange={(e) => setTerms(e.target.checked)}
+                  size="small"
+                  disabled={loading}
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: '#666' }}>
+                  I agree to the terms and conditions
+                </Typography>
+              }
+              sx={{ mb: 3 }}
+            />
 
             <Button
               fullWidth
@@ -186,14 +227,14 @@ export default function LoginPage() {
                 '&:disabled': { background: '#ccc' },
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign in'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up'}
             </Button>
 
             {/* <Button
               fullWidth
               variant="outlined"
               startIcon={<GoogleIcon />}
-              onClick={handleGoogleSignIn}
+              onClick={handleGoogleSignUp}
               disabled={loading}
               sx={{
                 py: 1.5,
@@ -203,21 +244,28 @@ export default function LoginPage() {
                 fontWeight: 500,
                 borderColor: '#ddd',
                 color: '#333',
-                '&:hover': { borderColor: '#bbb', backgroundColor: '#f5f5f5' },
+                '&:hover': {
+                  borderColor: '#bbb',
+                  backgroundColor: '#f5f5f5',
+                },
               }}
             >
-              Sign in with Google
+              Sign up with Google
             </Button> */}
 
             <Typography variant="body2" align="center" sx={{ mt: 3, color: '#666' }}>
-              Don't have an account?{' '}
+              Already have an account?{' '}
               <Link
                 component={RouterLink}
-                to="/signup"
+                to="/"
                 underline="none"
-                sx={{ color: '#FF3B3B', fontWeight: 600, '&:hover': { color: '#E63535' } }}
+                sx={{
+                  color: '#FF3B3B',
+                  fontWeight: 600,
+                  '&:hover': { color: '#E63535' },
+                }}
               >
-                Sign up for free!
+                Sign in
               </Link>
             </Typography>
           </Box>
@@ -238,7 +286,7 @@ export default function LoginPage() {
             component="img"
             src="/Images/lib.jpg"
             alt="Library"
-            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            sx={{ width: '100%', height: '100%', objectFit: 'fit' }}
           />
         </Box>
       </Paper>

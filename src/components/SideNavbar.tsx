@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+// import sidebar from '../components/sidebar.css';
 import {
   Box,
   Button,
@@ -22,6 +24,7 @@ interface TabProps {
   icon: React.ReactNode;
   isActive: boolean;
   to?: string; // Optional route
+  style?: React.CSSProperties; // Optional style
 }
 
 const Tab: React.FC<TabProps> = ({ value, onClick, icon, isActive, to }) => (
@@ -67,7 +70,9 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
 
   const handleLogout = () => {
     console.log('Logout clicked');
-    // TODO: Add logout logic (e.g., clear token, redirect)
+    localStorage.removeItem('token');
+    window.location.href = '/login'; // Redirect to login page
+    toast.success('Logged out successfully');
   };
 
   return (
@@ -75,10 +80,10 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
       variant="persistent"
       open={sideNavActive}
       sx={{
-        width: 250,
+        width: 450,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: 250,
+          width: 450,
           boxSizing: 'border-box',
           backgroundColor: '#E4EDFC',
           borderRight: '1px solid #ccc',
@@ -86,12 +91,14 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
         },
       }}
     >
+
       {/* Sidebar Content */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
+          width: '80%',
           py: 4,
         }}
       >
@@ -100,8 +107,8 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
           variant="h6"
           sx={{
             mb: 3,
-            textAlign: 'center',
-            fontWeight: 600,
+            textAlign: 'column',
+            fontWeight: 900,
             color: '#1976d2',
           }}
         >
@@ -123,6 +130,7 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
           icon={<Book />}
           isActive={active === 'issue-book'}
           to="/dashboard/issue-book"
+          style={{ fontSize: '5.1rem', fontWeight: 600 , color: '#1976d2'}}
         />
 
         <Tab
@@ -163,16 +171,17 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
           onClick={handleLogout}
           startIcon={<Logout />}
           sx={{
-            color: '#FF3B3B',
+            color: 'white',
             justifyContent: 'flex-start',
             textTransform: 'none',
             px: 3,
             py: 1.5,
+            backgroundColor:'red',
             fontSize: '1rem',
-            fontWeight: 500,
+            fontWeight: 900,
             '&:hover': {
-              color: '#E63535',
-              backgroundColor: 'grey.100',
+              color: 'red',
+              backgroundColor: '#ffe6e6',
             },
           }}
         >

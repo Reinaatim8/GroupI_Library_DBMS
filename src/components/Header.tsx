@@ -69,64 +69,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           sx={{
             position: 'absolute',
             left: '50%',
-            transform: 'translateX(-50%)',
-            color: '#6B46C1', // Purple color
-            fontFamily: "'Dancing Script', cursive", // Stylized font (add this font via Google Fonts)
+            transform: 'translateX(-50%,)',
+            color: 'black', 
             fontWeight: 700,
             textAlign: 'center',
-            fontSize: '1.5rem',
+            
           }}
         >
-          Welcome
+          LIBRARY MANAGEMENT SYSTEM, WELCOME BACK!
         </Typography>
-
-        {/* Right Section: Admin, View Members, Search */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Button
-            color="inherit"
-            sx={{
-              color: '#6B46C1', // Purple color
-              textTransform: 'none',
-              fontWeight: 500,
-              '&:hover': { backgroundColor: 'rgba(107, 70, 193, 0.1)' }, // Subtle hover effect
-            }}
-          >
-            Admin
-          </Button>
-          <Button
-            color="inherit"
-            sx={{
-              color: '#6B46C1', // Purple color
-              textTransform: 'none',
-              fontWeight: 500,
-              '&:hover': { backgroundColor: 'rgba(107, 70, 193, 0.1)' }, // Subtle hover effect
-            }}
-          >
-            View Members
-          </Button>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: '#fff',
-              borderRadius: 4,
-              padding: '2px 8px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            }}
-          >
-            <InputBase
-              placeholder="Search..."
-              sx={{ ml: 1, flex: 1, color: '#6B46C1' }}
-            />
-            <IconButton
-              type="button"
-              sx={{ p: '10px', color: '#6B46C1' }}
-              aria-label="search"
-            >
-              <SearchIcon />
-            </IconButton>
-          </Box>
-        </Box>
       </Toolbar>
     </AppBar>
   );
