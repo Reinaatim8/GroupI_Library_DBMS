@@ -45,8 +45,8 @@ const Tab: React.FC<TabProps> = ({ value, onClick, icon, isActive, to }) => (
       '&:hover': {
         backgroundColor: isActive ? '#1565c0' : '#E4EDFC',
       },
-      mb: 1,
-      fontWeight: 500,
+      mb: 5,
+      fontWeight: 600,
       fontSize: '1rem',
     }}
   >
@@ -106,61 +106,62 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
         <Typography
           variant="h6"
           sx={{
-            mb: 3,
+            mb: 4,
             textAlign: 'column',
-            fontWeight: 900,
+            fontWeight: 'bold',
             color: '#1976d2',
           }}
         >
-          My Dashboard
+          MY LIBRARY DASHBOARD!
         </Typography>
 
         {/* Navigation Tabs */}
+        
         <Tab
-          value="Dashboard"
+          value="LIBRARY STATISTICS OVERVIEW"
           onClick={() => handleActive('dashboard')}
-          icon={<Dashboard />}
+          icon={<Dashboard sx={{ iconSize: 40}} />}
           isActive={active === 'dashboard'}
            to="/dashboard"
         />
 
         <Tab
-          value="Issue Book"
+          value="ISSUE BOOKS / BORROW BOOKS"
           onClick={() => handleActive('issue-book')}
-          icon={<Book />}
+          icon={<Book  sx={{ fontSize: 40}}/>}
           isActive={active === 'issue-book'}
           to="/dashboard/issue-book"
           style={{ fontSize: '5.1rem', fontWeight: 600 , color: '#1976d2'}}
         />
 
         <Tab
-          value="Return Book"
+          value="RETURN LOANED / BORROWED BOOKS"
           onClick={() => handleActive('return-book')}
-          icon={<LibraryBooks />}
+          icon={<LibraryBooks sx={{ fontSize: 40}}/>}
           isActive={active === 'return-book'}
           to="/dashboard/return-book"
         />
 
         <Tab
-          value="Manage Books"
+          value="MANAGE BOOK RECORDS"
           onClick={() => handleActive('manage-books')}
-          icon={<Book />}
+          icon={<Book sx={{ fontSize: 40}}/>}
           isActive={active === 'manage-books'}
           to="/dashboard/manage-book"
         />
 
         <Tab
-          value="Manage Members"
+          value="MANAGE MEMBERS"
           onClick={() => handleActive('manage-members')}
-          icon={<People />}
+          icon={<People sx={{ fontSize: 40}} />}
           isActive={active === 'manage-members'}
           to="/dashboard/manage-member"
         />
 
         <Tab
-          value="View Loans"
+          value="VIEW LIBRARY BOOK LOANS"
           onClick={() => handleActive('view-loans')}
-          icon={<Description />}
+          icon={<Description sx={{ fontSize: 40}}/>}
           isActive={active === 'view-loans'}
           to="/dashboard/view-loan"
         />
@@ -179,6 +180,7 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
             backgroundColor:'red',
             fontSize: '1rem',
             fontWeight: 900,
+            borderRadius: 4,
             '&:hover': {
               color: 'red',
               backgroundColor: '#ffe6e6',

@@ -67,11 +67,6 @@ export default function SignupPage() {
     // --- API INTEGRATION END ---
   };
 
-  // const handleGoogleSignUp = () => {
-  //   // --- API INTEGRATION POINT FOR GOOGLE SIGN-UP ---
-  //   // Here you would trigger Google OAuth flow
-  //   setError('Google Sign-Up is not available yet.');
-  // };
 
   return (
     <Box

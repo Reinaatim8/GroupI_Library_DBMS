@@ -6,32 +6,39 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import PeopleIcon from '@mui/icons-material/People';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState({
-    totalBooks: 0,        // number of distinct titles
-    availableCopies: 0,   // sum of copies_available for available books
+    totalBooks: 0,
+    availableCopies: 0,
     activeLoans: 0,
     totalMembers: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token'); // make sure this key matches your login storage
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      toast.error('Session time Expired! Please Login Again to continue');
+      navigate('/login');
+      return; // stop further execution
+    }
+
     const config = {
       headers: { Authorization: `Bearer ${token}` },
     };
 
-    // Helper: Fetch all pages of the books endpoint and return a flat array of results
+    // Fetch all books (handle pagination)
     const fetchAllBooks = async () => {
       const baseUrl = 'https://Roy256.pythonanywhere.com/api/books/';
       let allResults: any[] = [];
       try {
-        // first request
         let res = await axios.get(baseUrl, config);
         allResults = allResults.concat(res.data.results || []);
-        // if paginated, follow `next` links until null
         let next = res.data.next;
         while (next) {
           res = await axios.get(next, config);
@@ -48,25 +55,20 @@ const DashboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch books (all pages), loans and members in parallel (loans/members are counted directly)
         const [booksData, loansRes, membersRes] = await Promise.all([
           fetchAllBooks(),
           axios.get('https://Roy256.pythonanywhere.com/api/loans/', config),
           axios.get('https://Roy256.pythonanywhere.com/api/members/', config),
         ]);
 
-        // total distinct titles (booksData.count or length of results)
         const totalBooks = booksData.count ?? booksData.results.length;
 
-        // availableCopies: sum copies_available for books where is_available === true
         const availableCopies = (booksData.results || []).reduce((sum, b: any) => {
-          // Defensive checks in case fields are named slightly differently
           const copies = Number(b.copies_available ?? b.copies ?? 0);
           const isAvailable = (typeof b.is_available !== 'undefined') ? Boolean(b.is_available) : copies > 0;
           return sum + (isAvailable ? copies : 0);
         }, 0);
 
-        // loans and members counts (Django paginate responses have .data.count)
         const activeLoans = loansRes.data.count ?? (loansRes.data.results?.length ?? 0);
         const totalMembers = membersRes.data.count ?? (membersRes.data.results?.length ?? 0);
 
@@ -85,7 +87,7 @@ const DashboardPage: React.FC = () => {
     };
 
     fetchAllStats();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -140,20 +142,15 @@ const DashboardPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'center', width: '100%', p: 3,  }}>
-      <Typography variant="h4" gutterBottom sx={{ color: '#1a1a1a', fontWeight: 700, mb: 4 }}>
-        
+    <Box sx={{ width: '100%', p: 3 }}>
+      <Typography variant="h4" gutterBottom sx={{ color: '#1a1a1a', fontWeight: 700, mb: 3 }}>
+      LIBRARY STATISTICS
       </Typography>
-      
-    
-      {/* 2 columns on md and up -> will produce 2 cards per row (2x2). 1 column on xs */}
+
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            md: 'repeat(2, 1fr)',
-          },
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
           gap: 3,
           width: '70%',
           height: '100%',
@@ -210,5 +207,6 @@ const DashboardPage: React.FC = () => {
 };
 
 export default DashboardPage;
+
 
 

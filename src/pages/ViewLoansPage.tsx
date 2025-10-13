@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import {
   Box,
   Card,
@@ -41,9 +43,16 @@ export default function ViewLoansPage() {
   const [search, setSearch] = useState('');
   const [filterOverdue, setFilterOverdue] = useState(false);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Assume you store token and role in localStorage after login
   const token = localStorage.getItem('access_token');
+      useEffect(() => {
+        if (!token) {
+          toast.error('Session time Expired! Please Login Again to continue');
+          navigate('/login');
+        }
+      }, [token, navigate]);
   const role = localStorage.getItem('role'); // 'librarian' or 'member'
   const memberId = localStorage.getItem('membership_id'); // if applicable
 
@@ -99,48 +108,48 @@ export default function ViewLoansPage() {
   return (
     <Box p={4} bgcolor="grey.50" minHeight="100vh">
       <Typography variant="h4" fontWeight="bold" mb={4}>
-        {role === 'member' ? 'My Book Loans' : 'All Book Loans'}
+        {role === 'member' ? 'MY BOOK LOANS' : 'ALL LIBRARY BOOK LOANS / BORROWED BOOKS '}
       </Typography>
 
       {/* Statistics */}
       <Box display="flex" flexWrap="wrap" gap={2} mb={4}>
-        <Card sx={{ p: 3, flex: 1, minWidth: 250 }}>
+        <Card sx={{ p: 3, flex: 1, minWidth: 350 }}>
           <Box display="flex" alignItems="center" gap={2}>
-            <BookOpen color="#1976d2" size={28} />
+            <BookOpen color="#1976d2" size={35} />
             <Box>
               <Typography variant="subtitle2" color="text.secondary">
-                Total Loans
+                TOTAL LIBRARY BOOK LOANS
               </Typography>
               <Typography variant="h5" fontWeight="bold">
-                {loans.length}
+                {loans.length} BOOKS
               </Typography>
             </Box>
           </Box>
         </Card>
 
-        <Card sx={{ p: 3, flex: 1, minWidth: 250 }}>
+        <Card sx={{ p: 3, flex: 1, minWidth: 350 }}>
           <Box display="flex" alignItems="center" gap={2}>
-            <Calendar color="#16a34a" size={28} />
+            <Calendar color="#16a34a" size={35} />
             <Box>
               <Typography variant="subtitle2" color="text.secondary">
-                On Time
+                RETURNED IN-TIME/TIME STILL AVAILABLE FOR RETURN
               </Typography>
               <Typography variant="h5" color="success.main" fontWeight="bold">
-                {onTimeCount}
+                {onTimeCount} BOOKS
               </Typography>
             </Box>
           </Box>
         </Card>
 
-        <Card sx={{ p: 3, flex: 1, minWidth: 250 }}>
+        <Card sx={{ p: 3, flex: 1, minWidth: 350 }}>
           <Box display="flex" alignItems="center" gap={2}>
-            <AlertTriangle color="#dc2626" size={28} />
+            <AlertTriangle color="#dc2626" size={35} />
             <Box>
               <Typography variant="subtitle2" color="text.secondary">
-                Overdue
+                OVERDUE/PAST RETURN DATE
               </Typography>
               <Typography variant="h5" color="error.main" fontWeight="bold">
-                {overdueCount}
+                {overdueCount} BOOKS
               </Typography>
             </Box>
           </Box>
@@ -172,16 +181,16 @@ export default function ViewLoansPage() {
 
       {/* Table */}
       <Card>
-        <TableContainer sx={{ maxHeight: 600 }}>
+        <TableContainer sx={{ maxHeight: 600, minWidth:650 }}>
           <Table stickyHeader>
             <TableHead>
-              <TableRow>
-                <TableCell>Member</TableCell>
-                <TableCell>Book Title</TableCell>
-                <TableCell>Author</TableCell>
-                <TableCell>Loan Date</TableCell>
-                <TableCell>Due Date</TableCell>
-                <TableCell>Status</TableCell>
+              <TableRow >
+                <TableCell><Typography fontWeight='bold' color='black'>MEMBER</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>BOOK TITLE</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>AUTHOR</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>LOAN DATE</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>DUE DATE</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>BOOK-LOAN STATUS</Typography></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

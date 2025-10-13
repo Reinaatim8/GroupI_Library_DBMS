@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -7,95 +7,83 @@ import {
   InputAdornment,
   Button,
   Chip,
-  Alert,
-  Snackbar,
+  Modal,
+  Fade,
+  Backdrop,
 } from '@mui/material';
-import { Search, Book, WarningAmber, ArrowBack } from '@mui/icons-material';
-
-// Dummy data - members with borrowed books
-const membersWithBooks = [
-  {
-    id: 1,
-    name: 'John Smith',
-    memberId: 'MEM001',
-    email: 'john@example.com',
-    borrowedBooks: [
-      {
-        id: 1,
-        title: 'To Kill a Mockingbird',
-        author: 'Harper Lee',
-        isbn: '978-0061120084',
-        loanDate: '2024-09-15',
-        dueDate: '2024-09-29',
-        isOverdue: true,
-      },
-      {
-        id: 2,
-        title: '1984',
-        author: 'George Orwell',
-        isbn: '978-0451524935',
-        loanDate: '2024-09-25',
-        dueDate: '2024-10-09',
-        isOverdue: false,
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Sarah Johnson',
-    memberId: 'MEM002',
-    email: 'sarah@example.com',
-    borrowedBooks: [
-      {
-        id: 3,
-        title: 'Pride and Prejudice',
-        author: 'Jane Austen',
-        isbn: '978-0141439518',
-        loanDate: '2024-09-20',
-        dueDate: '2024-10-04',
-        isOverdue: true,
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Michael Brown',
-    memberId: 'MEM003',
-    email: 'michael@example.com',
-    borrowedBooks: [
-      {
-        id: 4,
-        title: 'The Great Gatsby',
-        author: 'F. Scott Fitzgerald',
-        isbn: '978-0743273565',
-        loanDate: '2024-09-28',
-        dueDate: '2024-10-12',
-        isOverdue: false,
-      },
-      {
-        id: 5,
-        title: 'The Catcher in the Rye',
-        author: 'J.D. Salinger',
-        isbn: '978-0316769174',
-        loanDate: '2024-09-18',
-        dueDate: '2024-10-02',
-        isOverdue: true,
-      },
-    ],
-  },
-];
+import { Search, ArrowBack } from '@mui/icons-material';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 export default function ReturnBookPage() {
   const [search, setSearch] = useState('');
+  const [loans, setLoans] = useState<any[]>([]);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [showResults, setShowResults] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [returnedBook, setReturnedBook] = useState<any>(null);
+  const [returnedBookIds, setReturnedBookIds] = useState<number[]>([]);
+  const navigate = useNavigate();
+  const token = localStorage.getItem('access_token');
+    useEffect(() => {
+      if (!token) {
+        toast.error('Session time Expired! Please Login Again to continue');
+        navigate('/login');
+      }
+    }, [token, navigate]);
 
-  // Filter members
-  const filteredMembers = membersWithBooks.filter((member) => {
+  // ✅ Fetch all active loans
+  const fetchLoans = async () => {
+    try {
+      const res = await axios.get('https://Roy256.pythonanywhere.com/api/loans/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const activeLoans = res.data.results.filter((loan: any) => !loan.return_date);
+      setLoans(activeLoans);
+    } catch (err) {
+      console.error('Error fetching loans:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchLoans();
+
+    // ✅ Load last returned book from localStorage
+    const storedReturned = localStorage.getItem('lastReturnedBook');
+    if (storedReturned) {
+      setReturnedBook(JSON.parse(storedReturned));
+    }
+  }, []);
+
+  // ✅ Group loans by member
+  const membersWithBooks = Object.values(
+    loans.reduce((acc: any, loan: any) => {
+      const member = loan.member_details;
+      if (!acc[member.membership_id]) {
+        acc[member.membership_id] = {
+          id: member.membership_id,
+          name: member.name,
+          email: member.email,
+          borrowedBooks: [],
+        };
+      }
+      acc[member.membership_id].borrowedBooks.push({
+        id: loan.loan_id,
+        title: loan.book_details.title,
+        author: loan.book_details.author_name,
+        dueDate: loan.due_date,
+        loanDate: loan.loan_date,
+        isOverdue: loan.is_overdue,
+      });
+      return acc;
+    }, {})
+  );
+
+  // ✅ Filter members by search
+  const filteredMembers = membersWithBooks.filter((member: any) => {
     const nameMatch = member.name.toLowerCase().includes(search.toLowerCase());
-    const bookMatch = member.borrowedBooks.some((book) =>
+    const bookMatch = member.borrowedBooks.some((book: any) =>
       book.title.toLowerCase().includes(search.toLowerCase())
     );
     return nameMatch || bookMatch;
@@ -107,11 +95,28 @@ export default function ReturnBookPage() {
     setShowResults(false);
   };
 
-  const handleReturnBook = (book: any) => {
-    const returnDate = new Date().toLocaleDateString();
-    setReturnedBook({ ...book, returnDate, member: selectedMember });
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 5000);
+  // ✅ Return book API call
+  const handleReturnBook = async (book: any) => {
+    try {
+      const res = await axios.post(
+        `https://Roy256.pythonanywhere.com/api/loans/${book.id}/return_book/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setReturnedBook(res.data);
+      setReturnedBookIds((prev) => [...prev, book.id]);
+      localStorage.setItem('lastReturnedBook', JSON.stringify(res.data));
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+
+      // Refresh loan list
+      fetchLoans();
+    } catch (err: any) {
+      console.error('Error returning book:', err);
+      alert(err.response?.data?.non_field_errors?.[0] || 'Error returning book');
+    }
   };
 
   const calculateDaysOverdue = (dueDate: string) => {
@@ -123,212 +128,221 @@ export default function ReturnBookPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', p: 4, backgroundColor: '#f5f5f5', overflow: 'hidden' ,maxWidth: 900,mr:34}}>
-      <Box sx={{ maxWidth: 1000, mx: 'auto', overflow: 'hidden' }}>
-        <Typography variant="h4" fontWeight={700} mb={4}>
-          Return Book
-        </Typography>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        p: 4,
+        backgroundColor: '#f5f5f5',
+        minWidth: '100%',
+        mx: 25,
+      }}
+    >
+      <Box sx={{ width: 900, mx: 'auto', px: 4 ,marginLeft:10}}>
+      <Typography variant="h4" fontWeight={700} mb={4}>
+        RETURN A BOOK
+      </Typography>
 
-        {/* Success Alert */}
-        <Snackbar open={showSuccess} autoHideDuration={5000} onClose={() => setShowSuccess(false)}>
-          <Alert
-            severity="success"
-            sx={{ width: '100%' }}
-            onClose={() => setShowSuccess(false)}
+      {/* ✅ Success Popup */}
+      <Modal
+        open={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        closeAfterTransition
+        BackdropComponent={Backdrop}
+        BackdropProps={{ timeout: 300 }}
+      >
+        <Fade in={showSuccess}>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              bgcolor: 'background.paper',
+              boxShadow: 24,
+              borderRadius: 3,
+              p: 4,
+              width: 400,
+              textAlign: 'center',
+            }}
           >
-            "{returnedBook?.title}" returned by {returnedBook?.member.name} on {returnedBook?.returnDate}
-            {returnedBook?.isOverdue && (
-              <Typography variant="body2" color="warning.main">
-                ⚠ This book was {calculateDaysOverdue(returnedBook.dueDate)} days overdue
+            <Typography variant="h6" fontWeight={600} gutterBottom color="success.main">
+              ✅ Book Returned Successfully!
+            </Typography>
+            <Typography variant="body1">
+              "{returnedBook?.book_details?.title}" was returned by{' '}
+              <strong>{returnedBook?.member_details?.name}</strong>
+            </Typography>
+            {returnedBook?.is_overdue && (
+              <Typography variant="body2" color="warning.main" mt={2}>
+                ⚠ This book was {calculateDaysOverdue(returnedBook?.due_date)} days overdue.
               </Typography>
-            )}
-          </Alert>
-        </Snackbar>
-
-        <Card sx={{ p: 4, borderRadius: 3, backgroundColor: '#fff', overflow: 'hidden' }}>
-          {/* Search Box */}
-          <Box mb={4}>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <Search color="primary" />
-              <Typography variant="h6">Search Member or Book</Typography>
-            </Box>
-            <TextField
-              fullWidth
-              placeholder="Type member name or book title..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setShowResults(true);
-                setSelectedMember(null);
-              }}
-              onFocus={() => setShowResults(true)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search color="action" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            {showResults && search && filteredMembers.length > 0 && (
-              <Card sx={{ mt: 1, maxHeight: 300, overflowY: 'auto' }}>
-                {filteredMembers.map((member) => (
-                  <Box
-                    key={member.id}
-                    sx={{
-                      p: 2,
-                      borderBottom: '1px solid #eee',
-                      cursor: 'pointer',
-                      '&:hover': { backgroundColor: '#f0f7ff' },
-                    }}
-                    onClick={() => handleSelectMember(member)}
-                  >
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Box sx={{ minWidth: 0, flex: 1, mr: 2 }}>
-                        <Typography fontWeight={600} noWrap>{member.name}</Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                          {member.memberId} • {member.email}
-                        </Typography>
-                      </Box>
-                      <Chip
-                        label={`${member.borrowedBooks.length} ${member.borrowedBooks.length === 1 ? 'book' : 'books'}`}
-                        color="primary"
-                        size="small"
-                        sx={{ flexShrink: 0 }}
-                      />
-                    </Box>
-                  </Box>
-                ))}
-              </Card>
             )}
           </Box>
+        </Fade>
+      </Modal>
 
-          {/* Selected Member */}
-          {selectedMember && (
-            <>
-              <Card sx={{ p: 3, mb: 4, backgroundColor: '#e3f2fd' }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Box sx={{ minWidth: 100, flex: 1, mr: 4 }}>
-                    <Typography variant="subtitle2" color="primary" mb={1}>
-                      Selected Member
-                    </Typography>
-                    <Typography variant="h6" fontWeight={600} noWrap>{selectedMember.name}</Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      ID: {selectedMember.memberId} • {selectedMember.email}
-                    </Typography>
+      <Card sx={{ p: 4, borderRadius: 3, backgroundColor: '#fff' }}>
+        {/* Search Box */}
+        <Box mb={4}>
+          <Box display="flex" alignItems="center" gap={1} mb={2}>
+            <Search color="primary" />
+            <Typography variant="h6">Search Member or Book</Typography>
+          </Box>
+          <TextField
+            fullWidth
+            placeholder="Type member name or book title..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setShowResults(true);
+              setSelectedMember(null);
+            }}
+            onFocus={() => setShowResults(true)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {showResults && search && filteredMembers.length > 0 && (
+            <Card sx={{ mt: 1, maxHeight: 300, overflowY: 'auto' }}>
+              {filteredMembers.map((member: any) => (
+                <Box
+                  key={member.id}
+                  sx={{
+                    p: 2,
+                    borderBottom: '1px solid #eee',
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: '#f0f7ff' },
+                  }}
+                  onClick={() => handleSelectMember(member)}
+                >
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box sx={{ minWidth: 0, flex: 1, mr: 2 }}>
+                      <Typography fontWeight={600} noWrap>
+                        {member.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        {member.email}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={`${member.borrowedBooks.length} ${
+                        member.borrowedBooks.length === 1 ? 'book' : 'books'
+                      }`}
+                      color="primary"
+                      size="small"
+                      sx={{ flexShrink: 0 }}
+                    />
                   </Box>
-                  <Button
-                    startIcon={<ArrowBack />}
-                    color="primary"
-                    sx={{ flexShrink: 0 }}
-                    onClick={() => { setSelectedMember(null); setSearch(''); }}
-                  >
-                    Clear
-                  </Button>
                 </Box>
-              </Card>
-
-              {/* Borrowed Books */}
-              <Box display="flex" flexDirection="column" gap={2}>
-                {selectedMember.borrowedBooks.length === 0 ? (
-                  <Card sx={{ py: 6, textAlign: 'center', backgroundColor: '#f0f0f0' }}>
-                    <Book sx={{ fontSize: 48, color: '#c0c0c0' }} />
-                    <Typography>No books currently borrowed</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      This member has returned all books
-                    </Typography>
-                  </Card>
-                ) : (
-                  selectedMember.borrowedBooks.map((book: any) => {
-                    const daysOverdue = calculateDaysOverdue(book.dueDate);
-                    return (
-                      <Card
-                        key={book.id}
-                        sx={{
-                          p: 3,
-                          border: 1,
-                          borderColor: book.isOverdue ? 'error.light' : 'grey.200',
-                          backgroundColor: book.isOverdue ? 'error.lighter' : 'white',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={2} sx={{ minWidth: 0 }}>
-                          <Box flex={1} sx={{ minWidth: 0, overflow: 'hidden' }}>
-                            <Box display="flex" alignItems="center" gap={1} mb={1}>
-                              <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ flex: 1, minWidth: 0 }}>
-                                {book.title}
-                              </Typography>
-                              {book.isOverdue && (
-                                <Chip
-                                  icon={<WarningAmber />}
-                                  label="OVERDUE"
-                                  color="error"
-                                  size="small"
-                                  sx={{ flexShrink: 0 }}
-                                />
-                              )}
-                            </Box>
-                            <Typography variant="body2" color="text.secondary" mb={2} noWrap>
-                              by {book.author} • ISBN: {book.isbn}
-                            </Typography>
-
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(3, 1fr)' }} gap={2} fontSize={14}>
-                              <Box sx={{ minWidth: 0 }}>
-                                <Typography color="text.secondary" variant="body2">Loan Date</Typography>
-                                <Typography variant="body2">{book.loanDate}</Typography>
-                              </Box>
-                              <Box sx={{ minWidth: 0 }}>
-                                <Typography color="text.secondary" variant="body2">Due Date</Typography>
-                                <Typography variant="body2" color={book.isOverdue ? 'error.main' : 'text.primary'}>
-                                  {book.dueDate}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ minWidth: 0 }}>
-                                <Typography color="text.secondary" variant="body2">Status</Typography>
-                                {book.isOverdue ? (
-                                  <Typography variant="body2" color="error.main" fontWeight={600} noWrap>
-                                    {daysOverdue} {daysOverdue === 1 ? 'day' : 'days'} overdue
-                                  </Typography>
-                                ) : (
-                                  <Typography variant="body2" color="success.main" fontWeight={600}>
-                                    On time
-                                  </Typography>
-                                )}
-                              </Box>
-                            </Box>
-                          </Box>
-
-                          <Button
-                            variant="contained"
-                            color="success"
-                            sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' }, flexShrink: 0, whiteSpace: 'nowrap' }}
-                            onClick={() => handleReturnBook(book)}
-                          >
-                            Return
-                          </Button>
-                        </Box>
-                      </Card>
-                    );
-                  })
-                )}
-              </Box>
-            </>
-          )}
-
-          {/* No Selection */}
-          {!selectedMember && !search && (
-            <Card sx={{ py: 12, textAlign: 'center', backgroundColor: '#f0f0f0' }}>
-              <Search sx={{ fontSize: 64, color: '#c0c0c0', mb: 2 }} />
-              <Typography variant="body1" color="text.secondary">
-                Search for a member to view borrowed books
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Type a member name or book title in the search box above
-              </Typography>
+              ))}
             </Card>
           )}
+        </Box>
+
+        {/* Member and Books */}
+        {selectedMember && (
+          <>
+            <Card sx={{ p: 3, mb: 4, backgroundColor: '#e3f2fd' }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="subtitle2" color="primary">
+                    Selected Member
+                  </Typography>
+                  <Typography variant="h6" fontWeight={600}>
+                    {selectedMember.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedMember.email}
+                  </Typography>
+                </Box>
+                <Button
+                  startIcon={<ArrowBack />}
+                  color="primary"
+                  onClick={() => {
+                    setSelectedMember(null);
+                    setSearch('');
+                  }}
+                >
+                  Clear
+                </Button>
+              </Box>
+            </Card>
+
+            {selectedMember.borrowedBooks.map((book: any) => {
+              const daysOverdue = calculateDaysOverdue(book.dueDate);
+              const isReturned = returnedBookIds.includes(book.id);
+
+              return (
+                <Card
+                  key={book.id}
+                  sx={{
+                    p: 3,
+                    mb: 2,
+                    border: 1,
+                    borderColor: book.isOverdue ? 'error.light' : 'grey.200',
+                    backgroundColor: book.isOverdue ? '#fdecea' : 'white',
+                  }}
+                >
+                  <Box display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {book.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        by {book.author}
+                      </Typography>
+                      <Typography variant="body2">
+                        Due: <strong>{book.dueDate}</strong>
+                      </Typography>
+                      {book.isOverdue && (
+                        <Typography variant="body2" color="error" mt={1}>
+                          ⚠ Overdue by {daysOverdue} days
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      disabled={isReturned}
+                      onClick={() => handleReturnBook(book)}
+                    >
+                      {isReturned ? 'Returned' : 'Return'}
+                    </Button>
+                  </Box>
+                </Card>
+              );
+            })}
+          </>
+        )}
+      </Card>
+
+      {/* ✅ Last Returned Book Section */}
+      {returnedBook && (
+        <Card
+          sx={{
+            mt: 4,
+            p: 3,
+            borderRadius: 3,
+            backgroundColor: '#e8f5e9',
+          }}
+        >
+          <Typography variant="h6" color="success.main">
+            📘 Last Book Returned
+          </Typography>
+          <Typography variant="body1" fontWeight={600}>
+            {returnedBook.book_details?.title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            by {returnedBook.member_details?.name} on {returnedBook.return_date}
+          </Typography>
         </Card>
-      </Box>
+      )}
+    </Box>
     </Box>
   );
 }
+

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import {
   Box,
   TextField,
@@ -87,6 +88,12 @@ function ResetPassword() {
 
     try {
       const token = localStorage.getItem('access_token'); // get JWT token
+      useEffect(() => {
+        if (!token) {
+          toast.error('Session time Expired! Please Login Again to continue');
+          navigate('/login');
+        }
+      }, [token, navigate]);
       const response = await fetch('https://Roy256.pythonanywhere.com/api/auth/change-password/', {
         method: 'POST',
         headers: {

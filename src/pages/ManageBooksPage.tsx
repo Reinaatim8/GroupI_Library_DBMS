@@ -6,6 +6,8 @@ import {
 } from '@mui/material';
 import { Search, Add, Edit, Delete, Book, Close, Save } from '@mui/icons-material';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 // Example authors and genres (optional, can be dynamic from API)
 const authors = ['Harper Lee', 'George Orwell', 'Jane Austen', 'F. Scott Fitzgerald', 'Herman Melville', 'Chimamanda Ngozi Adichie', 'Toni Morrison', 'Haruki Murakami'];
@@ -24,8 +26,14 @@ export default function ManageBooksPage() {
     genre: '',
     copies: ''
   });
-
+  const navigate = useNavigate();
   const token = localStorage.getItem('access_token');
+      useEffect(() => {
+        if (!token) {
+          toast.error('Session time Expired! Please Login Again to continue');
+          navigate('/login');
+        }
+      }, [token, navigate]);
 
   // Fetch books from API
   useEffect(() => {
@@ -163,11 +171,11 @@ export default function ManageBooksPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', p: 4, bgcolor: '#f5f5f5' }}>
+    <Box sx={{ minHeight: '100vh', p: 2, bgcolor: '#f5f5f5' , minWidth:'100%', marginLeft:2}}>
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4} flexWrap="wrap">
           <Typography variant="h4" fontWeight={700} mb={{ xs: 2, sm: 0 }}>
-            Manage Books
+            ADD AND MANAGE LIBRARY BOOK RECORDS 
           </Typography>
           <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => handleOpenForm()}>
             Add New Book
@@ -187,15 +195,15 @@ export default function ManageBooksPage() {
 
         {/* Books Table */}
         <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-          <Table>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Book Title</TableCell>
-                <TableCell>Author Name</TableCell>
-                <TableCell>Genre</TableCell>
-                <TableCell>Year</TableCell>
-                <TableCell>Copies</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>BOOK TITLE</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>AUTHOR NAME</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>GENRE</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>PUBLICATION YEAR</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>COPIES AVAILABLE</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>ACTIONS</Typography></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

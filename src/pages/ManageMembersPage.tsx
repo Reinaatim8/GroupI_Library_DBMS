@@ -25,15 +25,15 @@ import {
   X,
   Save,
   ArrowLeft,
-  Book,
-  History,
   Mail,
   Phone,
   MapPin,
   Calendar,
 } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+
 
 // Type for members
 type Member = {
@@ -61,9 +61,15 @@ export default function ManageMembersPage() {
     password: "",
     confirm_password: "",
   });
+  const navigate = useNavigate();
 
   const token = localStorage.getItem('access_token');
-
+    useEffect(() => {
+      if (!token) {
+        toast.error('Session time Expired! Please Login Again to continue');
+        navigate('/login');
+      }
+    }, [token, navigate]);
   // Fetch members from API
   const fetchMembers = async () => {
     try {
@@ -188,7 +194,7 @@ export default function ManageMembersPage() {
   // Selected member view
   if (selectedMember) {
     return (
-      <Box p={0}>
+      <Box p={2}>
         <Button
           startIcon={<ArrowLeft size={20} />}
           onClick={handleBackToList}
@@ -244,10 +250,10 @@ export default function ManageMembersPage() {
 
   // Members list view
   return (
-    <Box p={0} width="90%" marginLeft={40}>
+    <Box p={0} width="100%" marginLeft={5}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4} flexWrap="wrap">
         <Typography variant="h4" fontWeight="bold">
-          Manage Members
+        MANAGE LIBRARY MEMBERSHIP HOLDERS
         </Typography>
         <Button
           startIcon={<Plus size={20} />}
@@ -258,6 +264,13 @@ export default function ManageMembersPage() {
           Add New Member
         </Button>
       </Box>
+      {/* Total Members Card */}
+      <Card sx={{ p: 2, mb: 2 , minwidth: 100}}>
+        <Typography variant="h6" fontWeight="bold" color='green' fontSize={30}>
+          TOTAL MEMBERS: {members.length}
+          
+        </Typography>
+      </Card>
 
       {/* Search Bar */}
       <Card sx={{ p: 2, mb: 4 }}>
@@ -267,7 +280,7 @@ export default function ManageMembersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           InputProps={{
-            startAdornment: <Search size={20} style={{ marginRight: 8 }} />,
+            startAdornment: <Search size={25} style={{ marginRight: 8 }} />,
           }}
         />
       </Card>
@@ -278,11 +291,11 @@ export default function ManageMembersPage() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Member ID</TableCell>
-                <TableCell>Member Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Phone</TableCell>
-                <TableCell>Membership Date</TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>MEMBER ID</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>MEMBER NAME</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>EMAIL</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>TELEPHONE NUMBER</Typography></TableCell>
+                <TableCell><Typography fontWeight='bold' color='black'>MEMBERSHIP START-DATE</Typography></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
