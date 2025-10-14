@@ -18,6 +18,7 @@ export default function ManageBooksPage() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingBook, setEditingBook] = useState<any>(null);
+  const [authorsList, setAuthorsList] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     author: '',
@@ -34,6 +35,31 @@ export default function ManageBooksPage() {
           navigate('/login');
         }
       }, [token, navigate]);
+      
+
+  useEffect(() => {
+      const fetchAuthors = async () => {
+          try {
+            const response = await axios.get('https://Roy256.pythonanywhere.com/api/authors/', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+      
+            const results = response.data.results || response.data;
+      
+            const mappedAuthors = results.map((a: any) => ({
+              id: a.id,
+              name: a.name || a.author_name,
+            }));
+      
+            setAuthorsList(mappedAuthors);
+          } catch (error) {
+            console.error('Error fetching authors:', error);
+          }
+        };
+      
+        fetchAuthors();
+      }, [token]);
+
 
   // Fetch books from API
   useEffect(() => {
@@ -260,19 +286,20 @@ export default function ManageBooksPage() {
             <Box display="flex" flexDirection="column" gap={2}>
               <TextField label="Book Title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} fullWidth />
               <Autocomplete
-                      freeSolo
-                      options={authors}
-                      value={formData.author}
-                      onChange={(_event: any, newValue: string | null) => {
-                        setFormData({ ...formData, author: newValue || '' });
-                      }}
-                      onInputChange={(_event: any, newInputValue: string) => {
-                        setFormData({ ...formData, author: newInputValue });
-                      }}
-                      renderInput={(params) => (
-                        <TextField {...params} label="Author Name" fullWidth />
-                      )}
-                    />
+                  freeSolo
+                  options={authorsList}
+                  value={formData.author}
+                  onChange={(_event: any, newValue: string | null) => {
+                    setFormData({ ...formData, author: newValue || '' });
+                  }}
+                  onInputChange={(_event: any, newInputValue: string) => {
+                    setFormData({ ...formData, author: newInputValue });
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Author Name" fullWidth />
+                  )}
+                />
+
               <TextField label="Genre" value={formData.genre} onChange={(e) => setFormData({ ...formData, genre: e.target.value })} fullWidth select>
                 {genres.map((genre) => <MenuItem key={genre} value={genre}>{genre}</MenuItem>)}
               </TextField>

@@ -194,48 +194,51 @@ export default function ManageMembersPage() {
   // Selected member view
   if (selectedMember) {
     return (
-      <Box p={2}>
+      <Box p={2} >
         <Button
           startIcon={<ArrowLeft size={20} />}
           onClick={handleBackToList}
           sx={{ mb: 4 }}
+          
         >
           Back to Members
         </Button>
 
         {/* Member Info Card */}
-        <Card sx={{ p: 3, mb: 4 }}>
-          <Box display="flex" gap={3} flexWrap="wrap">
+        <Card sx={{ p: 3, mb: 4 , boxShadow: 8}}>
+          <Box display="flex" gap={3} flexWrap="wrap" borderRadius={20} >
             <Box
               p={0}
               bgcolor="primary.light"
-              borderRadius="50%"
+              borderRadius="35"
               display="flex"
               alignItems="center"
+              marginLeft={10}
               justifyContent="center"
+              width={250}
             >
-              <User size={32} color="#1976d2" />
+              <User size={110} color="white" />
             </Box>
-            <Box flex={1}>
-              <Typography variant="h4" fontWeight="bold">
-                {selectedMember.name}
-              </Typography>
-              <Box mt={1} display="flex" flexWrap="wrap" gap={2}>
-                <Box display="flex" alignItems="center" gap={1} minWidth={200}>
-                  <Mail size={16} />
-                  <Typography>{selectedMember.email}</Typography>
+            <Box mt={1} display="flex"  flex={1} flexDirection="column">
+              <Typography variant="h4" fontWeight="bold" gap={1} fontSize={40} sx={{ textDecoration: 'underline' }}>
+                {selectedMember.name.toUpperCase()}
+              </Typography><br/>
+              <Box mt={1} display="flex" alignItems="center" gap={3} flexDirection="column">
+                <Box display="flex" alignItems="center" gap={3} minWidth={600} >
+                  <Mail size={30} color='blue' />
+                  <Typography fontFamily='monospace' fontSize={25}>{selectedMember.email}</Typography>
                 </Box>
-                <Box display="flex" alignItems="center" gap={1} minWidth={200}>
-                  <Phone size={16} />
-                  <Typography>{selectedMember.phone}</Typography>
+                <Box display="flex" alignItems="center" gap={3} minWidth={600} >
+                  <Phone size={30} color='green'/>
+                  <Typography fontFamily='monospace' fontSize={25}>{selectedMember.phone}</Typography>
                 </Box>
-                <Box display="flex" alignItems="center" gap={1} minWidth={200}>
-                  <MapPin size={16} />
-                  <Typography>{selectedMember.address}</Typography>
+                <Box display="flex" alignItems="center" gap={3} minWidth={600}>
+                  <MapPin size={30} color='red' />
+                  <Typography fontFamily='monospace' fontSize={25}>{selectedMember.address}</Typography>
                 </Box>
-                <Box display="flex" alignItems="center" gap={1} minWidth={200}>
-                  <Calendar size={16} />
-                  <Typography>Member since {selectedMember.membershipDate}</Typography>
+                <Box display="flex" alignItems="center" gap={3} minWidth={600}>
+                  <Calendar size={30} />
+                  <Typography fontFamily='monospace' fontSize={25}>Member since {selectedMember.membershipDate}</Typography>
                 </Box>
               </Box>
               <Box mt={2}>
