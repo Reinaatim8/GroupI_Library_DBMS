@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-// import sidebar from '../components/sidebar.css';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -14,29 +12,25 @@ import {
   LibraryBooks,
   People,
   Description,
-  Logout,
 } from '@mui/icons-material';
 
-// ---- Tab component ----
+// Tab component
 interface TabProps {
   value: string;
-  onClick: () => void;
   icon: React.ReactNode;
+  to: string;
   isActive: boolean;
-  to?: string; // Optional route
-  style?: React.CSSProperties; // Optional style
 }
 
-const Tab: React.FC<TabProps> = ({ value, onClick, icon, isActive, to }) => (
+const Tab: React.FC<TabProps> = ({ value, icon, to, isActive }) => (
   <Button
-    onClick={onClick}
-    startIcon={icon}
-    component={to ? Link : 'button'}
+    component={Link}
     to={to}
+    startIcon={icon}
     sx={{
       justifyContent: 'flex-start',
       textTransform: 'none',
-      px: 3,
+      px: 2,
       py: 1.5,
       borderRadius: 2,
       width: '100%',
@@ -45,150 +39,78 @@ const Tab: React.FC<TabProps> = ({ value, onClick, icon, isActive, to }) => (
       '&:hover': {
         backgroundColor: isActive ? '#1565c0' : '#E4EDFC',
       },
-      mb: 5,
-      fontWeight: 600,
-      fontSize: '1rem',
+      mb: 1,
+      fontWeight: 500,
+      fontSize: '0.9rem',
     }}
   >
     {value}
   </Button>
 );
 
-// ---- Sidebar component ----
+// Sidebar component
 interface SideNavbarProps {
   sideNavActive: boolean;
   handleSideNavActive: () => void;
 }
 
 const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavActive }) => {
-  const [active, setActive] = useState<string>('dashboard');
+  const location = useLocation();
 
-  const handleActive = (value: string) => {
-    setActive(value);
-    if (window.innerWidth <= 1280) handleSideNavActive();
-  };
-
-  const handleLogout = () => {
-    console.log('Logout clicked');
-    localStorage.removeItem('token');
-    window.location.href = '/login'; // Redirect to login page
-    toast.success('Logged out successfully');
-  };
+  const menuItems = [
+    { label: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
+    { label: 'Issue Book', icon: <Book />, path: '/dashboard/issue-book' },
+    { label: 'Return Book', icon: <LibraryBooks />, path: '/dashboard/return-book' },
+    { label: 'Manage Books', icon: <Book />, path: '/dashboard/manage-book' },
+    { label: 'Manage Members', icon: <People />, path: '/dashboard/manage-member' },
+    { label: 'View Loans', icon: <Description />, path: '/dashboard/view-loan' },
+  ];
 
   return (
     <Drawer
       variant="persistent"
       open={sideNavActive}
       sx={{
-        width: 450,
+        width: 280,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: 450,
+          width: 280,
           boxSizing: 'border-box',
-          backgroundColor: '#E4EDFC',
-          borderRight: '1px solid #ccc',
+          backgroundColor: '#f5f5f5',
+          borderRight: '1px solid #ddd',
           p: 2,
         },
       }}
     >
-
-      {/* Sidebar Content */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          width: '80%',
-          py: 4,
+          py: 2,
         }}
       >
-        {/* Logo or title */}
         <Typography
           variant="h6"
           sx={{
-            mb: 4,
-            textAlign: 'column',
+            mb: 3,
             fontWeight: 'bold',
             color: '#1976d2',
+            textAlign: 'center',
           }}
         >
-          MY LIBRARY DASHBOARD!
+          Library Dashboard
         </Typography>
 
-        {/* Navigation Tabs */}
-        
-        <Tab
-          value="LIBRARY STATISTICS OVERVIEW"
-          onClick={() => handleActive('dashboard')}
-          icon={<Dashboard sx={{ iconSize: 40}} />}
-          isActive={active === 'dashboard'}
-           to="/dashboard"
-        />
-
-        <Tab
-          value="ISSUE BOOKS / BORROW BOOKS"
-          onClick={() => handleActive('issue-book')}
-          icon={<Book  sx={{ fontSize: 40}}/>}
-          isActive={active === 'issue-book'}
-          to="/dashboard/issue-book"
-          style={{ fontSize: '5.1rem', fontWeight: 600 , color: '#1976d2'}}
-        />
-
-        <Tab
-          value="RETURN LOANED / BORROWED BOOKS"
-          onClick={() => handleActive('return-book')}
-          icon={<LibraryBooks sx={{ fontSize: 40}}/>}
-          isActive={active === 'return-book'}
-          to="/dashboard/return-book"
-        />
-
-        <Tab
-          value="MANAGE BOOK RECORDS"
-          onClick={() => handleActive('manage-books')}
-          icon={<Book sx={{ fontSize: 40}}/>}
-          isActive={active === 'manage-books'}
-          to="/dashboard/manage-book"
-        />
-
-        <Tab
-          value="MANAGE MEMBERS"
-          onClick={() => handleActive('manage-members')}
-          icon={<People sx={{ fontSize: 40}} />}
-          isActive={active === 'manage-members'}
-          to="/dashboard/manage-member"
-        />
-
-        <Tab
-          value="VIEW LIBRARY BOOK LOANS"
-          onClick={() => handleActive('view-loans')}
-          icon={<Description sx={{ fontSize: 40}}/>}
-          isActive={active === 'view-loans'}
-          to="/dashboard/view-loan"
-        />
-
-        {/* Spacer + Logout */}
-        <Box sx={{ flexGrow: 1 }} />
-        <Button
-          onClick={handleLogout}
-          startIcon={<Logout />}
-          sx={{
-            color: 'white',
-            justifyContent: 'flex-start',
-            textTransform: 'none',
-            px: 3,
-            py: 1.5,
-            backgroundColor:'red',
-            fontSize: '1rem',
-            fontWeight: 900,
-            borderRadius: 4,
-            '&:hover': {
-              color: 'red',
-              backgroundColor: '#ffe6e6',
-            },
-          }}
-        >
-          Log Out
-        </Button>
+        {menuItems.map((item) => (
+          <Tab
+            key={item.path}
+            value={item.label}
+            icon={item.icon}
+            to={item.path}
+            isActive={location.pathname === item.path}
+          />
+        ))}
       </Box>
     </Drawer>
   );

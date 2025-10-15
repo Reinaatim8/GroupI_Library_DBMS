@@ -4,28 +4,24 @@ import {
   Toolbar,
   Typography,
   IconButton,
-  InputBase,
-  Button,
   Box,
 } from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { useAuthStore } from './AuthContext';
 
-// Define props interface for Header (if any props are needed later)
 interface HeaderProps {
-  onMenuClick?: () => void; // Optional prop for menu toggle
+  onMenuClick?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+  const { user, logout } = useAuthStore();
+
   return (
     <AppBar
-      //position="fixed"
+      position="static"
       sx={{
-        backgroundColor: '#e0e0e0', // Light gray background matching the image
-        boxShadow: 'none', // Remove default shadow for a flat look
-        borderBottom: '1px solid #ccc', // Subtle border for definition
+        backgroundColor: '#1976d2',
+        boxShadow: 2,
         height: '90px',
       }}
     >
@@ -34,18 +30,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          minHeight: '64px', // Standard AppBar height
-          px: 2, // Padding on sides
+          minHeight: '90px',
+          px: 2,
         }}
       >
-        {/* Left Section: Dashboard */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <IconButton
             edge="start"
             color="inherit"
             aria-label="menu"
             onClick={onMenuClick}
-            sx={{ mr: 1, color: '#6B46C1' }} // Purple color for icon
+            sx={{ mr: 2 }}
           >
             <MenuIcon />
           </IconButton>
@@ -53,31 +48,31 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             variant="h6"
             noWrap
             sx={{
-              color: '#6B46C1', // Purple color for text
-              fontWeight: 500,
+              fontWeight: 600,
               textTransform: 'uppercase',
             }}
           >
-            Dashboard
+            Library Management System
           </Typography>
         </Box>
 
-        {/* Center Section: Welcome */}
-        <Typography
-          variant="h5"
-          noWrap
-          sx={{
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%,)',
-            color: 'black', 
-            fontWeight: 700,
-            textAlign: 'center',
-            
-          }}
-        >
-          LIBRARY MANAGEMENT SYSTEM, WELCOME BACK!
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="body1" sx={{ color: 'white' }}>
+            Welcome, {user?.name || 'User'}!
+          </Typography>
+          <Typography
+            variant="button"
+            onClick={logout}
+            sx={{
+              cursor: 'pointer',
+              color: 'white',
+              textTransform: 'none',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            Logout
+          </Typography>
+        </Box>
       </Toolbar>
     </AppBar>
   );

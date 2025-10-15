@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import {
   Box,
   TextField,
@@ -11,278 +14,183 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-//import { Google as GoogleIcon } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { apiCall } from '../config/api';
+
+const schema = yup.object({
+  name: yup.string().required('Full name is required').min(2, 'Name must be at least 2 characters'),
+  email: yup.string().email('Invalid email').required('Email is required'),
+  password: yup.string().required('Password is required').min(8, 'Password must be at least 8 characters'),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref('password')], 'Passwords must match')
+    .required('Confirm password is required'),
+  terms: yup.boolean().oneOf([true], 'You must accept the terms and conditions'),
+});
+
+type FormData = yup.InferType<typeof schema>;
 
 export default function SignupPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [terms, setTerms] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-
-    // --- Frontend validation ---
-    if (password !== confirm) {
-      setError('Passwords do not match.');
-      return;
-    }
-    if (!terms) {
-      setError('You must agree to the terms and conditions.');
-      return;
-    }
-
-    setLoading(true);
-
-    // --- API INTEGRATION START ---
+  const onSubmit = async (data: FormData) => {
     try {
-      // Replace the URL with your backend signup endpoint
-      const response = await fetch('https://your-api.com/signup', {
+      await apiCall('/members/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        }),
       });
-
-      const data = await response.json();
-      setLoading(false);
-
-      if (data.success) {
-        // On successful signup, redirect to login page
-        navigate('/');
-      } else {
-        setError(data.message || 'Signup failed. Please try again.');
-      }
-    } catch (err) {
-      setLoading(false);
-      setError('Network error. Please try again.');
-      console.error(err);
+      navigate('/login');
+    } catch (err: any) {
+      setError('root', { message: err.message || 'Signup failed' });
     }
-    // --- API INTEGRATION END ---
   };
-
 
   return (
     <Box
       sx={{
-        minHeight: '20vh',
+        minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#FF3B3B',
-        padding: 12,
+        background: '#f5f5f5',
+        padding: 2,
       }}
     >
       <Paper
-        elevation={8}
+        elevation={3}
         sx={{
           display: 'flex',
           width: '100%',
-          maxWidth: '1300px',
-          borderRadius: 3,
+          maxWidth: '900px',
+          borderRadius: 2,
           overflow: 'hidden',
           minHeight: 500,
         }}
       >
-        {/* Left Side - Form */}
         <Box
           sx={{
             flex: 1,
-            padding: { xs: 4, md: 6 },
+            padding: 4,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            backgroundColor: '#fff',
           }}
         >
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 900,
-              mb: 1,
-              color: '#FF3B3B',
-            }}
-          >
-            ✔️CREATE AN ACCOUNT!
+          <Typography variant="h4" sx={{ fontWeight: 600, mb: 2, color: '#1976d2' }}>
+            Create Account
           </Typography>
 
-          <Typography
-            variant="body2"
-            sx={{
-              mb: 4,
-              color: '#666',
-            }}
-          >
-            Join our Library System For Easy Management today!
+          <Typography variant="body1" sx={{ mb: 3, color: '#666' }}>
+            Join our library management system
           </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-              {error}
+          {errors.root && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errors.root.message}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
-              Full Name
-            </Typography>
+          <Box component="form" onSubmit={handleSubmit(onSubmit)}>
             <TextField
               fullWidth
-              placeholder="Enter your full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={loading}
-              required
-              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              label="Full Name"
+              {...register('name')}
+              error={!!errors.name}
+              helperText={errors.name?.message}
+              sx={{ mb: 2 }}
             />
 
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
-              Email
-            </Typography>
             <TextField
               fullWidth
-              placeholder="Enter your email"
+              label="Email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              required
-              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              {...register('email')}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              sx={{ mb: 2 }}
             />
 
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
-              Password
-            </Typography>
             <TextField
               fullWidth
+              label="Password"
               type="password"
-              placeholder="**********"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
-              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              {...register('password')}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              sx={{ mb: 2 }}
             />
 
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
-              Confirm Password
-            </Typography>
             <TextField
               fullWidth
+              label="Confirm Password"
               type="password"
-              placeholder="**********"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              disabled={loading}
-              required
-              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              {...register('confirmPassword')}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+              sx={{ mb: 2 }}
             />
 
             <FormControlLabel
-              control={
-                <Checkbox
-                  checked={terms}
-                  onChange={(e) => setTerms(e.target.checked)}
-                  size="small"
-                  disabled={loading}
-                />
-              }
-              label={
-                <Typography variant="body2" sx={{ color: '#666' }}>
-                  I agree to the terms and conditions
-                </Typography>
-              }
+              control={<Checkbox {...register('terms')} />}
+              label="I agree to the terms and conditions"
               sx={{ mb: 3 }}
             />
+            {errors.terms && (
+              <Typography variant="body2" color="error" sx={{ mb: 2 }}>
+                {errors.terms.message}
+              </Typography>
+            )}
 
             <Button
               fullWidth
               type="submit"
               variant="contained"
-              disabled={loading}
-              sx={{
-                mb: 2,
-                py: 1.5,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontSize: '1rem',
-                fontWeight: 500,
-                background: 'linear-gradient(135deg, #FF6B6B 0%, #FF3B3B 100%)',
-                boxShadow: '0 4px 12px rgba(255, 59, 59, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #FF5252 0%, #E63535 100%)',
-                  boxShadow: '0 6px 16px rgba(255, 59, 59, 0.4)',
-                },
-                '&:disabled': { background: '#ccc' },
-              }}
+              disabled={isSubmitting}
+              sx={{ mb: 2, py: 1.5 }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up'}
+              {isSubmitting ? <CircularProgress size={24} /> : 'Sign Up'}
             </Button>
 
-            {/* <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<GoogleIcon />}
-              onClick={handleGoogleSignUp}
-              disabled={loading}
-              sx={{
-                py: 1.5,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontSize: '1rem',
-                fontWeight: 500,
-                borderColor: '#ddd',
-                color: '#333',
-                '&:hover': {
-                  borderColor: '#bbb',
-                  backgroundColor: '#f5f5f5',
-                },
-              }}
-            >
-              Sign up with Google
-            </Button> */}
-
-            <Typography variant="body2" align="center" sx={{ mt: 3, color: '#666' }}>
+            <Typography variant="body2" align="center">
               Already have an account?{' '}
-              <Link
-                component={RouterLink}
-                to="/"
-                underline="none"
-                sx={{
-                  color: '#FF3B3B',
-                  fontWeight: 600,
-                  '&:hover': { color: '#E63535' },
-                }}
-              >
+              <Link component={RouterLink} to="/login" sx={{ color: '#1976d2' }}>
                 Sign in
               </Link>
             </Typography>
           </Box>
         </Box>
 
-        {/* Right Side - Image */}
         <Box
           sx={{
             flex: 1,
-            background: 'linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%)',
+            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
             display: { xs: 'none', md: 'flex' },
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'hidden',
+            color: 'white',
+            textAlign: 'center',
+            p: 4,
           }}
         >
-          <Box
-            component="img"
-            src="/Images/lib.jpg"
-            alt="Library"
-            sx={{ width: '100%', height: '100%', objectFit: 'fit' }}
-          />
+          <Box>
+            <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+              Welcome to Our Library
+            </Typography>
+            <Typography variant="body1">
+              Manage books, members, and loans efficiently with our system.
+            </Typography>
+          </Box>
         </Box>
       </Paper>
     </Box>

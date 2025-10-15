@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
 import {
   Box,
   TextField,
@@ -13,119 +14,58 @@ import {
   Alert,
 } from '@mui/material';
 import { Visibility, VisibilityOff, Lock, ArrowBack } from '@mui/icons-material';
+import { apiCall } from '../config/api';
 
-interface FormData {
-  old_password: string;
-  new_password: string;
-  confirm_password: string;
-}
+const schema = yup.object({
+  oldPassword: yup.string().required('Old password is required'),
+  newPassword: yup.string()
+    .required('New password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .notOneOf([yup.ref('oldPassword')], 'New password must be different from old password'),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref('newPassword')], 'Passwords must match')
+    .required('Confirm password is required'),
+});
 
-interface ShowPasswords {
-  old: boolean;
-  new: boolean;
-  confirm: boolean;
-}
-
-type PasswordField = keyof ShowPasswords;
-type FormField = keyof FormData;
+type FormData = yup.InferType<typeof schema>;
 
 function ResetPassword() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<FormData>({
-    old_password: '',
-    new_password: '',
-    confirm_password: '',
-  });
-
-  const [showPasswords, setShowPasswords] = useState<ShowPasswords>({
+  const [showPasswords, setShowPasswords] = React.useState({
     old: false,
     new: false,
     confirm: false,
   });
 
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<boolean>(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
+  });
 
-  const handleChange = (field: FormField) => (event: ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.value,
-    });
-    setError('');
-    setSuccess(false);
+  const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
   };
 
-  const togglePasswordVisibility = (field: PasswordField) => {
-    setShowPasswords({
-      ...showPasswords,
-      [field]: !showPasswords[field],
-    });
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    // Validation
-    if (!formData.old_password || !formData.new_password || !formData.confirm_password) {
-      setError('All fields are required');
-      return;
-    }
-
-    if (formData.new_password !== formData.confirm_password) {
-      setError('New password and confirm password do not match');
-      return;
-    }
-
-    if (formData.new_password.length < 8) {
-      setError('New password must be at least 8 characters long');
-      return;
-    }
-
-    if (formData.old_password === formData.new_password) {
-      setError('New password must be different from old password');
-      return;
-    }
-
+  const onSubmit = async (data: FormData) => {
     try {
-      const token = localStorage.getItem('access_token'); // get JWT token
-      useEffect(() => {
-        if (!token) {
-          toast.error('Session time Expired! Please Login Again to continue');
-          navigate('/login');
-        }
-      }, [token, navigate]);
-      const response = await fetch('https://Roy256.pythonanywhere.com/api/auth/change-password/', {
+      await apiCall('/auth/change-password/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({
-          old_password: formData.old_password,
-          new_password: formData.new_password,
-          confirm_password: formData.confirm_password,
+          old_password: data.oldPassword,
+          new_password: data.newPassword,
+          confirm_password: data.confirmPassword,
         }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || 'Failed to reset password');
-      }
-
-      setSuccess(true);
-      setError('');
-
-      setTimeout(() => {
-        setFormData({
-          old_password: '',
-          new_password: '',
-          confirm_password: '',
-        });
-        setSuccess(false);
-        navigate('/login');
-      }, 3000);
+      navigate('/login');
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setError('root', { message: err.message || 'Failed to reset password' });
     }
   };
 
@@ -140,7 +80,7 @@ function ResetPassword() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'white',
+        background: '#f5f5f5',
         py: 4,
       }}
     >
@@ -148,7 +88,8 @@ function ResetPassword() {
         elevation={3}
         sx={{
           p: 4,
-          width: '30%',
+          width: '100%',
+          maxWidth: 400,
           borderRadius: 2,
         }}
       >
@@ -159,7 +100,7 @@ function ResetPassword() {
             mb: 2,
             color: '#666',
             textTransform: 'none',
-            '&:hover': { color: '#FF3B3B' },
+            '&:hover': { color: '#1976d2' },
           }}
         >
           Back to Login
@@ -175,27 +116,21 @@ function ResetPassword() {
           </Typography>
         </Box>
 
-        {error && (
+        {errors.root && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {errors.root.message}
           </Alert>
         )}
 
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Password successfully updated! Redirecting to login...
-          </Alert>
-        )}
-
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box component="form" onSubmit={handleSubmit(onSubmit)}>
           <TextField
             fullWidth
             label="Old Password"
             type={showPasswords.old ? 'text' : 'password'}
-            value={formData.old_password}
-            onChange={handleChange('old_password')}
+            {...register('oldPassword')}
+            error={!!errors.oldPassword}
+            helperText={errors.oldPassword?.message}
             margin="normal"
-            required
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -211,11 +146,10 @@ function ResetPassword() {
             fullWidth
             label="New Password"
             type={showPasswords.new ? 'text' : 'password'}
-            value={formData.new_password}
-            onChange={handleChange('new_password')}
+            {...register('newPassword')}
+            error={!!errors.newPassword}
+            helperText={errors.newPassword?.message}
             margin="normal"
-            required
-            helperText="Must be at least 8 characters"
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -231,10 +165,10 @@ function ResetPassword() {
             fullWidth
             label="Confirm New Password"
             type={showPasswords.confirm ? 'text' : 'password'}
-            value={formData.confirm_password}
-            onChange={handleChange('confirm_password')}
+            {...register('confirmPassword')}
+            error={!!errors.confirmPassword}
+            helperText={errors.confirmPassword?.message}
             margin="normal"
-            required
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -251,19 +185,10 @@ function ResetPassword() {
             fullWidth
             variant="contained"
             size="large"
-            sx={{
-              mt: 3,
-              mb: 2,
-              py: 1.5,
-              background: 'linear-gradient(135deg, #FF6B6B 0%, #FF3B3B 100%)',
-              boxShadow: '0 4px 12px rgba(255, 59, 59, 0.3)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #FF5252 0%, #E63535 100%)',
-                boxShadow: '0 6px 16px rgba(255, 59, 59, 0.4)',
-              },
-            }}
+            disabled={isSubmitting}
+            sx={{ mt: 3, mb: 2, py: 1.5 }}
           >
-            Reset Password
+            {isSubmitting ? 'Resetting...' : 'Reset Password'}
           </Button>
         </Box>
       </Paper>
