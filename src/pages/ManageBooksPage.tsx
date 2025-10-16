@@ -40,7 +40,7 @@ export default function ManageBooksPage() {
   useEffect(() => {
       const fetchAuthors = async () => {
           try {
-            const response = await axios.get('https://Roy256.pythonanywhere.com/api/authors/', {
+            const response = await axios.get('/api/authors/', {
               headers: { Authorization: `Bearer ${token}` },
             });
       
@@ -65,7 +65,7 @@ export default function ManageBooksPage() {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await axios.get('https://Roy256.pythonanywhere.com/api/books/', {
+        const response = await axios.get('/api/books/', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -132,7 +132,7 @@ export default function ManageBooksPage() {
       if (editingBook) {
         // Update book
         await axios.put(
-          `https://Roy256.pythonanywhere.com/api/books/${editingBook.id}/`,
+          `/api/books/${editingBook.id}/`,
           {
             title: formData.title,
             author_name: formData.author,
@@ -145,7 +145,7 @@ export default function ManageBooksPage() {
       } else {
         // Create book
         await axios.post(
-          `https://Roy256.pythonanywhere.com/api/books/`,
+          `/api/books/`,
           {
             title: formData.title,
             author_name: formData.author,
@@ -158,7 +158,7 @@ export default function ManageBooksPage() {
       }
 
       // Refresh book list
-      const response = await axios.get('https://Roy256.pythonanywhere.com/api/books/', {
+      const response = await axios.get('/api/books/', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -185,7 +185,7 @@ export default function ManageBooksPage() {
     if (!window.confirm('Are you sure you want to delete this book?')) return;
 
     try {
-      await axios.delete(`https://Roy256.pythonanywhere.com/api/books/${id}/`, {
+      await axios.delete(`/api/books/${id}/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -32,7 +32,7 @@ export default function LoginPage() {
     try {
       // API request
       const response = await axios.post(
-        'https://Roy256.pythonanywhere.com/api/auth/login/',
+        '/api/auth/login/',
         { email, password }
       );
 

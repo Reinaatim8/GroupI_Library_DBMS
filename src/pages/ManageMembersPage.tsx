@@ -73,7 +73,7 @@ export default function ManageMembersPage() {
   // Fetch members from API
   const fetchMembers = async () => {
     try {
-      const response = await axios.get('https://Roy256.pythonanywhere.com/api/members/', {
+      const response = await axios.get('/api/members/', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -127,7 +127,7 @@ export default function ManageMembersPage() {
 
     try {
       const response = await axios.post(
-        'https://Roy256.pythonanywhere.com/api/members/',
+        '/api/members/',
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -159,7 +159,7 @@ export default function ManageMembersPage() {
   const handleViewDetails = async (member: Member) => {
     try {
       const response = await axios.get(
-        `https://Roy256.pythonanywhere.com/api/members/${member.memberId}/`,
+        `/api/members/${member.memberId}/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

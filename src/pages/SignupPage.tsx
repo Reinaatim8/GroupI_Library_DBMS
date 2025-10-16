@@ -1,7 +1,4 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -14,183 +11,278 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
+//import { Google as GoogleIcon } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { apiCall } from '../config/api';
-
-const schema = yup.object({
-  name: yup.string().required('Full name is required').min(2, 'Name must be at least 2 characters'),
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup.string().required('Password is required').min(8, 'Password must be at least 8 characters'),
-  confirmPassword: yup.string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required('Confirm password is required'),
-  terms: yup.boolean().oneOf([true], 'You must accept the terms and conditions'),
-});
-
-type FormData = yup.InferType<typeof schema>;
 
 export default function SignupPage() {
-  const navigate = useNavigate();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setError,
-  } = useForm<FormData>({
-    resolver: yupResolver(schema),
-  });
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [terms, setTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      await apiCall('/members/', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        }),
-      });
-      navigate('/login');
-    } catch (err: any) {
-      setError('root', { message: err.message || 'Signup failed' });
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    // --- Frontend validation ---
+    if (password !== confirm) {
+      setError('Passwords do not match.');
+      return;
     }
+    if (!terms) {
+      setError('You must agree to the terms and conditions.');
+      return;
+    }
+
+    setLoading(true);
+
+    // --- API INTEGRATION START ---
+    try {
+      // Replace the URL with your backend signup endpoint
+      const response = await fetch('https://your-api.com/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+      setLoading(false);
+
+      if (data.success) {
+        // On successful signup, redirect to login page
+        navigate('/');
+      } else {
+        setError(data.message || 'Signup failed. Please try again.');
+      }
+    } catch (err) {
+      setLoading(false);
+      setError('Network error. Please try again.');
+      console.error(err);
+    }
+    // --- API INTEGRATION END ---
   };
+
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '20vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f5f5f5',
-        padding: 2,
+        background: '#FF3B3B',
+        padding: 12,
       }}
     >
       <Paper
-        elevation={3}
+        elevation={8}
         sx={{
           display: 'flex',
           width: '100%',
-          maxWidth: '900px',
-          borderRadius: 2,
+          maxWidth: '1300px',
+          borderRadius: 3,
           overflow: 'hidden',
           minHeight: 500,
         }}
       >
+        {/* Left Side - Form */}
         <Box
           sx={{
             flex: 1,
-            padding: 4,
+            padding: { xs: 4, md: 6 },
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
+            backgroundColor: '#fff',
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 600, mb: 2, color: '#1976d2' }}>
-            Create Account
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 900,
+              mb: 1,
+              color: '#FF3B3B',
+            }}
+          >
+            ✔️CREATE AN ACCOUNT!
           </Typography>
 
-          <Typography variant="body1" sx={{ mb: 3, color: '#666' }}>
-            Join our library management system
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 4,
+              color: '#666',
+            }}
+          >
+            Join our Library System For Easy Management today!
           </Typography>
 
-          {errors.root && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {errors.root.message}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+              {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+          <Box component="form" onSubmit={handleSubmit}>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
+              Full Name
+            </Typography>
             <TextField
               fullWidth
-              label="Full Name"
-              {...register('name')}
-              error={!!errors.name}
-              helperText={errors.name?.message}
-              sx={{ mb: 2 }}
+              placeholder="Enter your full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+              required
+              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
+              Email
+            </Typography>
             <TextField
               fullWidth
-              label="Email"
+              placeholder="Enter your email"
               type="email"
-              {...register('email')}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              sx={{ mb: 2 }}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              required
+              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
+              Password
+            </Typography>
             <TextField
               fullWidth
-              label="Password"
               type="password"
-              {...register('password')}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              sx={{ mb: 2 }}
+              placeholder="**********"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              required
+              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#333' }}>
+              Confirm Password
+            </Typography>
             <TextField
               fullWidth
-              label="Confirm Password"
               type="password"
-              {...register('confirmPassword')}
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword?.message}
-              sx={{ mb: 2 }}
+              placeholder="**********"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              disabled={loading}
+              required
+              sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
             <FormControlLabel
-              control={<Checkbox {...register('terms')} />}
-              label="I agree to the terms and conditions"
+              control={
+                <Checkbox
+                  checked={terms}
+                  onChange={(e) => setTerms(e.target.checked)}
+                  size="small"
+                  disabled={loading}
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: '#666' }}>
+                  I agree to the terms and conditions
+                </Typography>
+              }
               sx={{ mb: 3 }}
             />
-            {errors.terms && (
-              <Typography variant="body2" color="error" sx={{ mb: 2 }}>
-                {errors.terms.message}
-              </Typography>
-            )}
 
             <Button
               fullWidth
               type="submit"
               variant="contained"
-              disabled={isSubmitting}
-              sx={{ mb: 2, py: 1.5 }}
+              disabled={loading}
+              sx={{
+                mb: 2,
+                py: 1.5,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 500,
+                background: 'linear-gradient(135deg, #FF6B6B 0%, #FF3B3B 100%)',
+                boxShadow: '0 4px 12px rgba(255, 59, 59, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #FF5252 0%, #E63535 100%)',
+                  boxShadow: '0 6px 16px rgba(255, 59, 59, 0.4)',
+                },
+                '&:disabled': { background: '#ccc' },
+              }}
             >
-              {isSubmitting ? <CircularProgress size={24} /> : 'Sign Up'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up'}
             </Button>
 
-            <Typography variant="body2" align="center">
+            {/* <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GoogleIcon />}
+              onClick={handleGoogleSignUp}
+              disabled={loading}
+              sx={{
+                py: 1.5,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 500,
+                borderColor: '#ddd',
+                color: '#333',
+                '&:hover': {
+                  borderColor: '#bbb',
+                  backgroundColor: '#f5f5f5',
+                },
+              }}
+            >
+              Sign up with Google
+            </Button> */}
+
+            <Typography variant="body2" align="center" sx={{ mt: 3, color: '#666' }}>
               Already have an account?{' '}
-              <Link component={RouterLink} to="/login" sx={{ color: '#1976d2' }}>
+              <Link
+                component={RouterLink}
+                to="/"
+                underline="none"
+                sx={{
+                  color: '#FF3B3B',
+                  fontWeight: 600,
+                  '&:hover': { color: '#E63535' },
+                }}
+              >
                 Sign in
               </Link>
             </Typography>
           </Box>
         </Box>
 
+        {/* Right Side - Image */}
         <Box
           sx={{
             flex: 1,
-            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+            background: 'linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%)',
             display: { xs: 'none', md: 'flex' },
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
-            textAlign: 'center',
-            p: 4,
+            overflow: 'hidden',
           }}
         >
-          <Box>
-            <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-              Welcome to Our Library
-            </Typography>
-            <Typography variant="body1">
-              Manage books, members, and loans efficiently with our system.
-            </Typography>
-          </Box>
+          <Box
+            component="img"
+            src="/Images/lib.jpg"
+            alt="Library"
+            sx={{ width: '100%', height: '100%', objectFit: 'fit' }}
+          />
         </Box>
       </Paper>
     </Box>
