@@ -1,85 +1,57 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+// import sidebar from '../components/sidebar.css';
 import {
   Box,
   Button,
   Drawer,
   Typography,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Avatar,
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
-  Book as BookIcon,
-  LibraryBooks as LibraryBooksIcon,
-  People as PeopleIcon,
-  Description as DescriptionIcon,
-  Logout as LogoutIcon,
-  LibraryAdd as LibraryAddIcon,
-  PersonAdd as PersonAddIcon,
-  Assignment as AssignmentIcon,
+  Dashboard,
+  Book,
+  LibraryBooks,
+  People,
+  Description,
+  Logout,
 } from '@mui/icons-material';
 
-// ---- Navigation Item component ----
-interface NavItemProps {
-  label: string;
-  icon: React.ReactNode;
-  to: string;
-  isActive: boolean;
+// ---- Tab component ----
+interface TabProps {
+  value: string;
   onClick: () => void;
+  icon: React.ReactNode;
+  isActive: boolean;
+  to?: string; // Optional route
+  style?: React.CSSProperties; // Optional style
 }
 
-const NavItem: React.FC<NavItemProps> = ({ label, icon, to, isActive, onClick }) => (
-  <ListItem disablePadding>
-    <ListItemButton
-      component={Link}
-      to={to}
-      onClick={onClick}
-      selected={isActive}
-      sx={{
-        borderRadius: 'var(--border-radius-md)',
-        mx: 1,
-        mb: 0.5,
-        '&.Mui-selected': {
-          backgroundColor: 'var(--primary-color)',
-          color: 'white',
-          '&:hover': {
-            backgroundColor: 'var(--primary-hover)',
-          },
-          '& .MuiListItemIcon-root': {
-            color: 'white',
-          },
-        },
-        '&:hover': {
-          backgroundColor: isActive ? 'var(--primary-hover)' : 'rgba(25, 118, 210, 0.04)',
-        },
-        minHeight: 48,
-        px: 2.5,
-      }}
-    >
-      <ListItemIcon
-        sx={{
-          color: isActive ? 'white' : 'var(--text-secondary)',
-          minWidth: 40,
-        }}
-      >
-        {icon}
-      </ListItemIcon>
-      <ListItemText
-        primary={label}
-        primaryTypographyProps={{
-          fontSize: '0.875rem',
-          fontWeight: isActive ? 600 : 500,
-        }}
-      />
-    </ListItemButton>
-  </ListItem>
+const Tab: React.FC<TabProps> = ({ value, onClick, icon, isActive, to }) => (
+  <Button
+    onClick={onClick}
+    startIcon={icon}
+    component={to ? Link : 'button'}
+    to={to}
+    sx={{
+      justifyContent: 'flex-start',
+      textTransform: 'none',
+      px: 3,
+      py: 1.5,
+      borderRadius: 2,
+      width: '100%',
+      color: isActive ? '#fff' : '#333',
+      backgroundColor: isActive ? '#1976d2' : 'transparent',
+      '&:hover': {
+        backgroundColor: isActive ? '#1565c0' : '#E4EDFC',
+      },
+      mb: 5,
+      fontWeight: 600,
+      fontSize: '1rem',
+    }}
+  >
+    {value}
+  </Button>
 );
 
 // ---- Sidebar component ----
@@ -89,8 +61,7 @@ interface SideNavbarProps {
 }
 
 const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavActive }) => {
-  const location = useLocation();
-  const [active, setActive] = useState<string>(location.pathname);
+  const [active, setActive] = useState<string>('dashboard');
 
   const handleActive = (value: string) => {
     setActive(value);
@@ -100,132 +71,123 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
   const handleLogout = () => {
     console.log('Logout clicked');
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    window.location.href = '/login'; // Redirect to login page
     toast.success('Logged out successfully');
   };
-
-  const navigationItems = [
-    {
-      label: 'Dashboard',
-      icon: <DashboardIcon />,
-      to: '/dashboard',
-      key: 'dashboard',
-    },
-    {
-      label: 'Issue Books',
-      icon: <LibraryAddIcon />,
-      to: '/dashboard/issue-book',
-      key: 'issue-book',
-    },
-    {
-      label: 'Return Books',
-      icon: <LibraryBooksIcon />,
-      to: '/dashboard/return-book',
-      key: 'return-book',
-    },
-    {
-      label: 'Manage Books',
-      icon: <BookIcon />,
-      to: '/dashboard/manage-book',
-      key: 'manage-books',
-    },
-    {
-      label: 'Manage Members',
-      icon: <PersonAddIcon />,
-      to: '/dashboard/manage-member',
-      key: 'manage-members',
-    },
-    {
-      label: 'View Loans',
-      icon: <AssignmentIcon />,
-      to: '/dashboard/view-loan',
-      key: 'view-loans',
-    },
-  ];
 
   return (
     <Drawer
       variant="persistent"
       open={sideNavActive}
       sx={{
-        width: 280,
+        width: 450,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: 280,
+          width: 450,
           boxSizing: 'border-box',
-          backgroundColor: 'var(--background-paper)',
-          borderRight: '1px solid var(--divider)',
-          boxShadow: 'var(--shadow-sm)',
+          backgroundColor: '#E4EDFC',
+          borderRight: '1px solid #ccc',
+          p: 2,
         },
       }}
     >
-      {/* Sidebar Header */}
+
+      {/* Sidebar Content */}
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          p: 2,
-          borderBottom: '1px solid var(--divider)',
+          flexDirection: 'column',
+          height: '100%',
+          width: '80%',
+          py: 4,
         }}
       >
-        <Avatar
+        {/* Logo or title */}
+        <Typography
+          variant="h6"
           sx={{
-            bgcolor: 'var(--primary-color)',
-            mr: 2,
-            width: 40,
-            height: 40,
+            mb: 4,
+            textAlign: 'column',
+            fontWeight: 'bold',
+            color: '#1976d2',
           }}
         >
-          <BookIcon />
-        </Avatar>
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-            Library
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
-            Management System
-          </Typography>
-        </Box>
-      </Box>
+          MY LIBRARY DASHBOARD!
+        </Typography>
 
-      {/* Navigation Menu */}
-      <Box sx={{ overflow: 'auto', flexGrow: 1, p: 1 }}>
-        <List>
-          {navigationItems.map((item) => (
-            <NavItem
-              key={item.key}
-              label={item.label}
-              icon={item.icon}
-              to={item.to}
-              isActive={active === item.to}
-              onClick={() => handleActive(item.to)}
-            />
-          ))}
-        </List>
-      </Box>
+        {/* Navigation Tabs */}
+        
+        <Tab
+          value="LIBRARY STATISTICS OVERVIEW"
+          onClick={() => handleActive('dashboard')}
+          icon={<Dashboard sx={{ iconSize: 40}} />}
+          isActive={active === 'dashboard'}
+           to="/dashboard"
+        />
 
-      <Divider />
+        <Tab
+          value="ISSUE BOOKS / BORROW BOOKS"
+          onClick={() => handleActive('issue-book')}
+          icon={<Book  sx={{ fontSize: 40}}/>}
+          isActive={active === 'issue-book'}
+          to="/dashboard/issue-book"
+          style={{ fontSize: '5.1rem', fontWeight: 600 , color: '#1976d2'}}
+        />
 
-      {/* Logout Section */}
-      <Box sx={{ p: 2 }}>
+        <Tab
+          value="RETURN LOANED / BORROWED BOOKS"
+          onClick={() => handleActive('return-book')}
+          icon={<LibraryBooks sx={{ fontSize: 40}}/>}
+          isActive={active === 'return-book'}
+          to="/dashboard/return-book"
+        />
+
+        <Tab
+          value="MANAGE BOOK RECORDS"
+          onClick={() => handleActive('manage-books')}
+          icon={<Book sx={{ fontSize: 40}}/>}
+          isActive={active === 'manage-books'}
+          to="/dashboard/manage-book"
+        />
+
+        <Tab
+          value="MANAGE MEMBERS"
+          onClick={() => handleActive('manage-members')}
+          icon={<People sx={{ fontSize: 40}} />}
+          isActive={active === 'manage-members'}
+          to="/dashboard/manage-member"
+        />
+
+        <Tab
+          value="VIEW LIBRARY BOOK LOANS"
+          onClick={() => handleActive('view-loans')}
+          icon={<Description sx={{ fontSize: 40}}/>}
+          isActive={active === 'view-loans'}
+          to="/dashboard/view-loan"
+        />
+
+        {/* Spacer + Logout */}
+        <Box sx={{ flexGrow: 1 }} />
         <Button
           onClick={handleLogout}
-          startIcon={<LogoutIcon />}
-          fullWidth
-          variant="outlined"
-          color="error"
+          startIcon={<Logout />}
           sx={{
+            color: 'white',
             justifyContent: 'flex-start',
             textTransform: 'none',
-            borderRadius: 'var(--border-radius-md)',
+            px: 3,
             py: 1.5,
+            backgroundColor:'red',
+            fontSize: '1rem',
+            fontWeight: 900,
+            borderRadius: 4,
             '&:hover': {
-              backgroundColor: 'var(--error-color)',
-              color: 'white',
+              color: 'red',
+              backgroundColor: '#ffe6e6',
             },
           }}
         >
-          Logout
+          Log Out
         </Button>
       </Box>
     </Drawer>

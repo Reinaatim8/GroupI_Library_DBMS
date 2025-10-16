@@ -94,7 +94,7 @@ function ResetPassword() {
           navigate('/login');
         }
       }, [token, navigate]);
-      const response = await fetch('/api/auth/change-password/', {
+      const response = await fetch('https://Roy256.pythonanywhere.com/api/auth/change-password/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

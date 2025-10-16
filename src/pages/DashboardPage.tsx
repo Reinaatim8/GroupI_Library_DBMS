@@ -1,411 +1,241 @@
+// src/DashboardPage.tsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  CircularProgress,
-  Grid,
-  Button,
-  Chip,
-  Avatar,
-} from '@mui/material';
-import {
-  MenuBook as MenuBookIcon,
-  CheckCircle as CheckCircleIcon,
-  LocalLibrary as LocalLibraryIcon,
-  People as PeopleIcon,
-  Add as AddIcon,
-  TrendingUp as TrendingUpIcon,
-  Book as BookIcon,
-  PersonAdd as PersonAddIcon,
-} from '@mui/icons-material';
+import { Box, Typography, CircularProgress, styled, keyframes } from '@mui/material';
+import { MenuBook, CheckCircle, LocalLibrary, People } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import {
-  PieChart, Pie, Cell,
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
+// Animations
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const float = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+`;
+
+const pulse = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+`;
+
+// Styled Components
+const StatCard = styled(Box)(({ theme }) => ({
+  background: '#fff',
+  borderRadius: 16,
+  padding: '24px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 20,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  animation: `${fadeIn} 0.6s ease-out`,
+  '&:hover': {
+    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+    transform: 'translateY(-4px)',
+  },
+}));
+
+const IconWrapper = styled(Box)(({ color }: { color: string }) => ({
+  width: 56,
+  height: 56,
+  borderRadius: 14,
+  background: `${color}15`,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  animation: `${pulse} 3s ease-in-out infinite`,
+  '& svg': {
+    fontSize: 28,
+    color: color,
+  },
+}));
+
+const ChartCard = styled(Box)({
+  background: '#fff',
+  borderRadius: 20,
+  padding: '32px',
+  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  animation: `${fadeIn} 0.8s ease-out`,
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    boxShadow: '0 8px 28px rgba(0,0,0,0.1)',
+  },
+});
+
+interface Stats {
+  totalBooks: number;
+  availableCopies: number;
+  activeLoans: number;
+  totalMembers: number;
+}
 
 const DashboardPage: React.FC = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     totalBooks: 0,
     availableCopies: 0,
     activeLoans: 0,
     totalMembers: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      toast.error('Session time Expired! Please Login Again to continue');
+      toast.error('Session expired. Please login again.');
       navigate('/login');
       return;
     }
 
     const config = { headers: { Authorization: `Bearer ${token}` } };
+    const baseUrl = 'https://Roy256.pythonanywhere.com/api';
 
-    const fetchAllBooks = async () => {
-      const baseUrl = '/api/books/';
-      let allResults: any[] = [];
+    const fetchData = async () => {
       try {
-        let res = await axios.get(baseUrl, config);
-        allResults = allResults.concat(res.data.results || []);
-        let next = res.data.next;
-        while (next) {
-          res = await axios.get(next, config);
-          allResults = allResults.concat(res.data.results || []);
-          next = res.data.next;
-        }
-        return { count: res.data.count ?? allResults.length, results: allResults };
-      } catch (err) { throw err; }
-    };
-
-    const fetchAllStats = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [booksData, loansRes, membersRes] = await Promise.all([
-          fetchAllBooks(),
-          axios.get('/api/loans/', config),
-          axios.get('/api/members/', config),
+        const [booksRes, loansRes, membersRes] = await Promise.all([
+          axios.get(`${baseUrl}/books/`, config),
+          axios.get(`${baseUrl}/loans/`, config),
+          axios.get(`${baseUrl}/members/`, config),
         ]);
 
-        const totalBooks = booksData.count ?? booksData.results.length;
-        const availableCopies = (booksData.results || []).reduce((sum, b: any) => {
-          const copies = Number(b.copies_available ?? b.copies ?? 0);
-          const isAvailable = (typeof b.is_available !== 'undefined') ? Boolean(b.is_available) : copies > 0;
-          return sum + (isAvailable ? copies : 0);
-        }, 0);
+        const books = booksRes.data.results || [];
+        const availableCopies = books.reduce((sum: number, b: any) => 
+          sum + Number(b.copies_available ?? b.copies ?? 0), 0
+        );
 
-        const activeLoans = loansRes.data.count ?? (loansRes.data.results?.length ?? 0);
-        const totalMembers = membersRes.data.count ?? (membersRes.data.results?.length ?? 0);
-
-        setStats({ totalBooks, availableCopies, activeLoans, totalMembers });
-      } catch (err: any) {
-        console.error('Error fetching dashboard stats:', err.response?.data ?? err.message ?? err);
-        setError('Failed to load dashboard stats');
-      } finally { setLoading(false); }
+        setStats({
+          totalBooks: booksRes.data.count ?? books.length,
+          availableCopies,
+          activeLoans: loansRes.data.count ?? loansRes.data.results?.length ?? 0,
+          totalMembers: membersRes.data.count ?? membersRes.data.results?.length ?? 0,
+        });
+      } catch (err) {
+        toast.error('Failed to load dashboard data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchAllStats();
+    fetchData();
   }, [navigate]);
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+        <CircularProgress sx={{ color: '#2563eb' }} />
       </Box>
     );
   }
 
-  if (error) {
-    return (
-      <Box sx={{ p: 6, textAlign: 'center' }}>
-        <Typography variant="h6" color="error" sx={{ mb: 2 }}>{error}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Check console for details and ensure your token and endpoints are correct.
-        </Typography>
-      </Box>
-    );
-  }
-
-  const dashboardCards = [
-    {
-      title: 'Total Book Titles',
-      value: stats.totalBooks,
-      icon: MenuBookIcon,
-      color: 'var(--primary-color)',
-      bgColor: 'var(--background-paper)',
-      trend: '+12%',
-      trendColor: 'var(--success-color)',
-    },
-    {
-      title: 'Available Copies',
-      value: stats.availableCopies,
-      icon: CheckCircleIcon,
-      color: 'var(--success-color)',
-      bgColor: 'var(--background-paper)',
-      trend: `${((stats.availableCopies / stats.totalBooks) * 100).toFixed(1)}%`,
-      trendColor: 'var(--info-color)',
-    },
-    {
-      title: 'Active Loans',
-      value: stats.activeLoans,
-      icon: LocalLibraryIcon,
-      color: 'var(--warning-color)',
-      bgColor: 'var(--background-paper)',
-      trend: `${stats.activeLoans} active`,
-      trendColor: 'var(--warning-color)',
-    },
-    {
-      title: 'Total Members',
-      value: stats.totalMembers,
-      icon: PeopleIcon,
-      color: 'var(--info-color)',
-      bgColor: 'var(--background-paper)',
-      trend: '+5%',
-      trendColor: 'var(--success-color)',
-    },
+  const cards = [
+    { title: 'Book Titles', value: stats.totalBooks, icon: MenuBook, color: '#2563eb' },
+    { title: 'Available Copies', value: stats.availableCopies, icon: CheckCircle, color: '#10b981' },
+    { title: 'Active Loans', value: stats.activeLoans, icon: LocalLibrary, color: '#f59e0b' },
+    { title: 'Members', value: stats.totalMembers, icon: People, color: '#8b5cf6' },
   ];
 
   const pieData = [
-    { name: 'Available Copies', value: stats.availableCopies },
-    { name: 'Active Loans', value: stats.activeLoans },
-    
+    { name: 'Available', value: stats.availableCopies, color: '#10b981' },
+    { name: 'On Loan', value: stats.activeLoans, color: '#f59e0b' },
   ];
 
   const barData = [
-    { name: 'Total Book-Copies', value: stats.availableCopies },
-    { name: 'Total Members', value: stats.totalMembers },
-    { name: 'Active Book Loans', value: stats.activeLoans },
-    { name: 'Total Book Titles', value: stats.totalBooks },
+    { name: 'Titles', value: stats.totalBooks },
+    { name: 'Copies', value: stats.availableCopies },
+    { name: 'Loans', value: stats.activeLoans },
+    { name: 'Members', value: stats.totalMembers },
   ];
 
   return (
-    <Box sx={{ width: '100%', p: { xs: 2, md: 3 } }}>
-      {/* Header Section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          sx={{
-            color: 'var(--text-primary)',
-            fontWeight: 700,
-            mb: 2,
-            textAlign: { xs: 'center', md: 'left' },
-          }}
-        >
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, mx: 'auto', background: '#fafafa', minHeight: '100vh' }}>
+      {/* Header */}
+      <Box sx={{ mb: 5, animation: `${fadeIn} 0.5s ease-out` }}>
+        <Typography variant="h3" sx={{ fontWeight: 700, color: '#111', mb: 1, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>
           Library Dashboard
         </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            color: 'var(--text-secondary)',
-            mb: 3,
-            textAlign: { xs: 'center', md: 'left' },
-          }}
-        >
-          Overview of your library's key statistics and quick actions
+        <Typography variant="body1" sx={{ color: '#666', fontSize: '0.95rem' }}>
+          Overview of your library statistics
         </Typography>
-
-        {/* Quick Action Buttons */}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
-          <Button
-            variant="contained"
-            startIcon={<BookIcon />}
-            onClick={() => navigate('/dashboard/issue-book')}
-            sx={{
-              backgroundColor: 'var(--primary-color)',
-              '&:hover': { backgroundColor: 'var(--primary-hover)' },
-              minHeight: 48,
-            }}
-          >
-            Issue Book
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<PersonAddIcon />}
-            onClick={() => navigate('/dashboard/manage-member')}
-            sx={{
-              borderColor: 'var(--primary-color)',
-              color: 'var(--primary-color)',
-              '&:hover': {
-                borderColor: 'var(--primary-hover)',
-                backgroundColor: 'rgba(25, 118, 210, 0.04)',
-              },
-              minHeight: 48,
-            }}
-          >
-            Add Member
-          </Button>
-        </Box>
       </Box>
 
-      {/* Dashboard Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {dashboardCards.map((card, index) => {
-          const IconComponent = card.icon;
-          return (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Card
-                sx={{
-                  height: 160,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  borderRadius: 'var(--border-radius-lg)',
-                  boxShadow: 'var(--shadow-md)',
-                  backgroundColor: card.bgColor,
-                  border: '1px solid var(--divider)',
-                  transition: 'var(--transition-normal)',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 'var(--shadow-lg)',
-                  },
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
+      {/* Stats Cards */}
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, 
+        gap: 3, 
+        mb: 5 
+      }}>
+        {cards.map((card, i) => (
+          <StatCard key={i} sx={{ animationDelay: `${i * 0.1}s` }}>
+            <IconWrapper color={card.color}>
+              <card.icon />
+            </IconWrapper>
+            <Box>
+              <Typography variant="body2" sx={{ color: '#666', fontSize: '0.85rem', mb: 0.5 }}>
+                {card.title}
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#111' }}>
+                {card.value.toLocaleString()}
+              </Typography>
+            </Box>
+          </StatCard>
+        ))}
+      </Box>
+
+      {/* Charts */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 4 }}>
+        <ChartCard sx={{ animationDelay: '0.4s' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mb: 3 }}>
+            Inventory Distribution
+          </Typography>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={4}
               >
-                <CardContent sx={{ p: 2, flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: card.color,
-                        mr: 1.5,
-                        width: 40,
-                        height: 40,
-                      }}
-                    >
-                      <IconComponent sx={{ fontSize: 20 }} />
-                    </Avatar>
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: 'var(--text-secondary)',
-                          fontWeight: 500,
-                          textTransform: 'uppercase',
-                          fontSize: '0.75rem',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        {card.title}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      color: 'var(--text-primary)',
-                      fontWeight: 700,
-                      mb: 1,
-                    }}
-                  >
-                    {Number(card.value).toLocaleString()}
-                  </Typography>
-                  <Chip
-                    label={card.trend}
-                    size="small"
-                    sx={{
-                      backgroundColor: card.trendColor,
-                      color: 'white',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
+                {pieData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-      {/* Charts Section */}
-      <Grid container spacing={3}>
-        {/* Pie Chart */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: 'var(--border-radius-lg)',
-              boxShadow: 'var(--shadow-md)',
-              backgroundColor: 'var(--background-paper)',
-              border: '1px solid var(--divider)',
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 3,
-                fontWeight: 600,
-                textAlign: 'center',
-                color: 'var(--text-primary)',
-              }}
-            >
-              Book Availability Overview
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={index === 0 ? 'var(--success-color)' : 'var(--warning-color)'}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => [Number(value).toLocaleString(), 'Count']}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </Grid>
-
-        {/* Bar Chart */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: 'var(--border-radius-lg)',
-              boxShadow: 'var(--shadow-md)',
-              backgroundColor: 'var(--background-paper)',
-              border: '1px solid var(--divider)',
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 3,
-                fontWeight: 600,
-                textAlign: 'center',
-                color: 'var(--text-primary)',
-              }}
-            >
-              Library Statistics
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip
-                  formatter={(value) => [Number(value).toLocaleString(), 'Count']}
-                />
-                <Bar
-                  dataKey="value"
-                  fill="var(--primary-color)"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </Grid>
-      </Grid>
+        <ChartCard sx={{ animationDelay: '0.5s' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mb: 3 }}>
+            Statistics Overview
+          </Typography>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={barData}>
+              <XAxis dataKey="name" stroke="#999" style={{ fontSize: '0.85rem' }} />
+              <YAxis stroke="#999" style={{ fontSize: '0.85rem' }} />
+              <Tooltip 
+                contentStyle={{ 
+                  borderRadius: 8, 
+                  border: 'none', 
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)' 
+                }} 
+              />
+              <Bar dataKey="value" fill="#2563eb" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </Box>
     </Box>
   );
 };
 
 export default DashboardPage;
-
-
-
-
-

@@ -59,7 +59,7 @@ export default function ViewLoansPage() {
   useEffect(() => {
     const fetchLoans = async () => {
       try {
-        const response = await axios.get('/api/loans/', {
+        const response = await axios.get('https://Roy256.pythonanywhere.com/api/loans/', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

@@ -1,29 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  TextField,
-  Button,
-  Paper,
-  Typography,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  Autocomplete,
-  Alert,
-  Grid,
-  Snackbar,
+  Box, TextField, Button, Typography, Card, Chip, Autocomplete, Alert, styled, keyframes
 } from '@mui/material';
-import {
-  PersonOutline,
-  MenuBook,
-  CalendarToday,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-} from '@mui/icons-material';
+import { PersonOutline, MenuBook, CheckCircle } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const slideIn = keyframes`
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+`;
+
+const StyledCard = styled(Card)({
+  background: '#fff',
+  borderRadius: 16,
+  padding: 32,
+  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  animation: `${fadeIn} 0.6s ease-out`,
+  transition: 'all 0.3s ease',
+  '&:hover': { boxShadow: '0 8px 28px rgba(0,0,0,0.1)' },
+});
+
+const SelectionCard = styled(Box)({
+  background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+  borderRadius: 12,
+  padding: 20,
+  marginTop: 16,
+  animation: `${slideIn} 0.4s ease-out`,
+  border: '2px solid #e2e8f0',
+});
 
 interface Member {
   id: number;
@@ -37,7 +48,6 @@ interface Book {
   title: string;
   author_name?: string;
   copies_available: number;
-  total_copies: number;
 }
 
 interface LoanResponse {
@@ -48,7 +58,7 @@ interface LoanResponse {
   due_date: string;
 }
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://Roy256.pythonanywhere.com/api';
 
 export default function IssueBookPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -56,73 +66,42 @@ export default function IssueBookPage() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [lastIssued, setLastIssued] = useState<LoanResponse | null>(null);
-  const [message, setMessage] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const token = localStorage.getItem('access_token');
-    useEffect(() => {
-      if (!token) {
-        toast.error('Session time Expired! Please Login Again to continue');
-        navigate('/login');
-      }
-    }, [token, navigate]);
-  console.log("🔐 Token:", token);
-   
+
   useEffect(() => {
-    fetchMembers();
-    fetchBooks();
-
-    // ✅ Load last issued book from localStorage
-  const storedLastIssued = localStorage.getItem('lastIssuedBook');
-  if (storedLastIssued) {
-    setLastIssued(JSON.parse(storedLastIssued));}
-  }, []);
-
-  // ✅ Fetch Members
-  const fetchMembers = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/members/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("🔹 Members API Response:", res.data);
-
-      // Handles both paginated and direct lists
-      const memberData = res.data.results || res.data || [];
-      setMembers(memberData);
-    } catch (err) {
-      console.error('Error fetching members:', err);
-      setError('Failed to fetch members.');
+    if (!token) {
+      toast.error('Session expired. Please login again.');
+      navigate('/login');
+      return;
     }
-  };
 
-  // ✅ Fetch Books
-  const fetchBooks = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/books/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("🔹 Books API Response:", res.data);
+    const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Use paginated results
-      const bookData = res.data.results || [];
-      setBooks(bookData);
-    } catch (err) {
-      console.error('Error fetching books:', err);
-      setError('Failed to fetch books.');
-    }
-  };
+    const fetchData = async () => {
+      try {
+        const [membersRes, booksRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/members/`, config),
+          axios.get(`${API_BASE_URL}/books/`, config),
+        ]);
 
-  // ✅ Issue Book
+        setMembers(membersRes.data.results || membersRes.data || []);
+        setBooks(booksRes.data.results || []);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load data');
+      }
+    };
+
+    fetchData();
+  }, [token, navigate]);
+
   const handleIssueBook = async () => {
     if (!selectedMember || !selectedBook) {
-      setError('Please select both a member and a book.');
-      setSnackbarMessage('Please select both a member and a book.');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      setError('Please select both member and book.');
       return;
     }
 
@@ -137,313 +116,158 @@ export default function IssueBookPage() {
           membership_id: selectedMember.membership_id,
           loan_period_days: 14,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setLastIssued(res.data);
       setMessage('Book successfully issued!');
-      setSnackbarMessage('Book issued successfully!');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-
-      // Save to localStorage
-      localStorage.setItem('lastIssuedBook', JSON.stringify(res.data));
-      // Clear selections
       setSelectedMember(null);
       setSelectedBook(null);
+      toast.success('Book issued successfully!');
     } catch (err: any) {
       console.error('Error issuing book:', err);
-      const errorMsg = err.response?.data?.detail || 'An error occurred while issuing the book.';
-      setError(errorMsg);
-      setSnackbarMessage(errorMsg);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      setError(err.response?.data?.message || 'Failed to issue book');
+      toast.error('Failed to issue book');
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
-  };
-
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'var(--background-default)', p: { xs: 2, md: 3 } }}>
-      <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-        {/* Header */}
-        <Typography
-          variant="h4"
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 900, mx: 'auto', background: '#fafafa', minHeight: '100vh' }}>
+      <Box sx={{ mb: 5, animation: `${fadeIn} 0.5s ease-out` }}>
+        <Typography variant="h3" sx={{ fontWeight: 700, color: '#111', mb: 1, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>
+          Issue Book
+        </Typography>
+        <Typography variant="body1" sx={{ color: '#666' }}>
+          Assign books to library members
+        </Typography>
+      </Box>
+
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
+      {message && <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
+
+      <StyledCard sx={{ mb: 3 }}>
+        {/* Member Selection */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+            <PersonOutline sx={{ color: '#2563eb' }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>Select Member</Typography>
+          </Box>
+
+          <Autocomplete
+            options={members}
+            getOptionLabel={(option) => `${option.name} (${option.membership_id})`}
+            value={selectedMember}
+            onChange={(_, newValue) => setSelectedMember(newValue)}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Search by name or ID" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+            )}
+          />
+
+          {selectedMember && (
+            <SelectionCard>
+              <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 600 }}>
+                Selected Member
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mt: 0.5 }}>
+                {selectedMember.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+                {selectedMember.email} • ID: {selectedMember.membership_id}
+              </Typography>
+            </SelectionCard>
+          )}
+        </Box>
+
+        {/* Book Selection */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+            <MenuBook sx={{ color: '#2563eb' }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>Select Book</Typography>
+          </Box>
+
+          <Autocomplete
+            options={books}
+            getOptionLabel={(option) => `${option.title} by ${option.author_name || 'Unknown'}`}
+            value={selectedBook}
+            onChange={(_, newValue) => setSelectedBook(newValue)}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Search by title or author" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+            )}
+          />
+
+          {selectedBook && (
+            <SelectionCard>
+              <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 600 }}>
+                Selected Book
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mt: 0.5 }}>
+                {selectedBook.title}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5, mb: 1 }}>
+                by {selectedBook.author_name || 'Unknown'}
+              </Typography>
+              <Chip
+                label={`${selectedBook.copies_available} copies available`}
+                size="small"
+                sx={{
+                  background: selectedBook.copies_available > 0 ? '#dcfce7' : '#fee2e2',
+                  color: selectedBook.copies_available > 0 ? '#166534' : '#991b1b',
+                  fontWeight: 600,
+                }}
+              />
+            </SelectionCard>
+          )}
+        </Box>
+
+        <Button
+          variant="contained"
+          fullWidth
+          size="large"
+          onClick={handleIssueBook}
+          disabled={!selectedMember || !selectedBook}
           sx={{
-            color: 'var(--text-primary)',
-            fontWeight: 700,
-            mb: 1,
-            textAlign: { xs: 'center', md: 'left' },
+            py: 1.5,
+            borderRadius: 2,
+            background: '#2563eb',
+            fontWeight: 600,
+            textTransform: 'none',
+            fontSize: '1rem',
+            '&:hover': { background: '#1d4ed8' },
+            '&:disabled': { background: '#e2e8f0' },
           }}
         >
           Issue Book
-        </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            color: 'var(--text-secondary)',
-            mb: 4,
-            textAlign: { xs: 'center', md: 'left' },
-          }}
-        >
-          Select a member and book to create a new loan
-        </Typography>
+        </Button>
+      </StyledCard>
 
-        <Grid container spacing={3}>
-          {/* Main Form */}
-          <Grid item xs={12} md={8}>
-            <Card
-              sx={{
-                borderRadius: 'var(--border-radius-lg)',
-                boxShadow: 'var(--shadow-md)',
-                backgroundColor: 'var(--background-paper)',
-                border: '1px solid var(--divider)',
-              }}
-            >
-              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-                {/* Error/Success Messages */}
-                {error && (
-                  <Alert severity="error" sx={{ mb: 3 }} icon={<ErrorIcon />}>
-                    {error}
-                  </Alert>
-                )}
-                {message && (
-                  <Alert severity="success" sx={{ mb: 3 }} icon={<CheckCircleIcon />}>
-                    {message}
-                  </Alert>
-                )}
-
-                {/* Member Selection */}
-                <Box sx={{ mb: 4 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <PersonOutline sx={{ mr: 1.5, color: 'var(--primary-color)', fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                      Select Member
-                    </Typography>
-                  </Box>
-
-                  <Autocomplete
-                    options={members}
-                    getOptionLabel={(option) => `${option.name} (${option.membership_id})`}
-                    value={selectedMember}
-                    onChange={(event, newValue) => setSelectedMember(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Search member by name or ID"
-                        fullWidth
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            minHeight: 56,
-                            fontSize: '1rem',
-                          },
-                        }}
-                      />
-                    )}
-                    sx={{ mb: 2 }}
-                  />
-
-                  {selectedMember && (
-                    <Card
-                      sx={{
-                        bgcolor: 'var(--background-elevated)',
-                        border: '1px solid var(--divider)',
-                        borderRadius: 'var(--border-radius-md)',
-                      }}
-                    >
-                      <CardContent sx={{ py: 2, px: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'var(--primary-color)', fontWeight: 600, mb: 1 }}>
-                          Selected Member
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {selectedMember.name}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
-                          ID: {selectedMember.membership_id} • {selectedMember.email}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  )}
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-
-                {/* Book Selection */}
-                <Box sx={{ mb: 4 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <MenuBook sx={{ mr: 1.5, color: 'var(--primary-color)', fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                      Select Book
-                    </Typography>
-                  </Box>
-
-                  <Autocomplete
-                    options={books}
-                    getOptionLabel={(option) => `${option.title} by ${option.author_name || 'Unknown'}`}
-                    value={selectedBook}
-                    onChange={(event, newValue) => setSelectedBook(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Search book by title or author"
-                        fullWidth
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            minHeight: 56,
-                            fontSize: '1rem',
-                          },
-                        }}
-                      />
-                    )}
-                    sx={{ mb: 2 }}
-                  />
-
-                  {selectedBook && (
-                    <Card
-                      sx={{
-                        bgcolor: 'var(--background-elevated)',
-                        border: '1px solid var(--divider)',
-                        borderRadius: 'var(--border-radius-md)',
-                      }}
-                    >
-                      <CardContent sx={{ py: 2, px: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'var(--secondary-color)', fontWeight: 600, mb: 1 }}>
-                          Selected Book
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {selectedBook.title}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'var(--text-secondary)', mb: 1 }}>
-                          by {selectedBook.author_name || 'Unknown'}
-                        </Typography>
-                        <Chip
-                          label={`${selectedBook.copies_available} copies available`}
-                          size="small"
-                          color={selectedBook.copies_available > 0 ? 'success' : 'error'}
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
-                </Box>
-
-                {/* Issue Button */}
-                <Button
-                  variant="contained"
-                  size="large"
-                  fullWidth
-                  onClick={handleIssueBook}
-                  disabled={!selectedMember || !selectedBook}
-                  sx={{
-                    py: 2,
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    backgroundColor: 'var(--primary-color)',
-                    minHeight: 56,
-                    borderRadius: 'var(--border-radius-md)',
-                    '&:hover': {
-                      backgroundColor: 'var(--primary-hover)',
-                      transform: 'translateY(-1px)',
-                      boxShadow: 'var(--shadow-lg)',
-                    },
-                    '&:disabled': {
-                      backgroundColor: 'var(--text-disabled)',
-                      color: 'var(--background-paper)',
-                    },
-                  }}
-                >
-                  Issue Book
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Last Issued Book Sidebar */}
-          <Grid item xs={12} md={4}>
-            {lastIssued && (
-              <Card
-                sx={{
-                  borderRadius: 'var(--border-radius-lg)',
-                  boxShadow: 'var(--shadow-md)',
-                  backgroundColor: 'var(--success-color)',
-                  color: 'white',
-                  border: '1px solid var(--divider)',
-                }}
-              >
-                <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <CheckCircleIcon sx={{ mr: 1, fontSize: 24 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Last Issued
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
-                      Member
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {lastIssued.member_details.name}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
-                      Book
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {lastIssued.book_details.title}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
-                      Loan Date
-                    </Typography>
-                    <Typography variant="body1">
-                      {new Date(lastIssued.loan_date).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
-                      Due Date
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {new Date(lastIssued.due_date).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            )}
-          </Grid>
-        </Grid>
-
-        {/* Snackbar for feedback */}
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={4000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={handleSnackbarClose}
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
-            icon={snackbarSeverity === 'success' ? <CheckCircleIcon /> : <ErrorIcon />}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-      </Box>
+      {lastIssued && (
+        <StyledCard sx={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', animationDelay: '0.2s' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <CheckCircle sx={{ color: '#059669' }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#065f46' }}>
+              Last Issued Book
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Member</Typography>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>{lastIssued.member_details.name}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Book</Typography>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>{lastIssued.book_details.title}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Loan Date</Typography>
+              <Typography variant="body1">{lastIssued.loan_date}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Due Date</Typography>
+              <Typography variant="body1" sx={{ color: '#dc2626', fontWeight: 600 }}>{lastIssued.due_date}</Typography>
+            </Box>
+          </Box>
+        </StyledCard>
+      )}
     </Box>
   );
 }
-
-
-
-
