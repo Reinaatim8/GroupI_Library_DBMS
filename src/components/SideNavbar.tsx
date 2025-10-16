@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-// import sidebar from '../components/sidebar.css';
 import {
   Box,
   Button,
   Drawer,
   Typography,
+  useTheme,
 } from '@mui/material';
 import {
   Dashboard,
@@ -17,44 +17,47 @@ import {
   Logout,
 } from '@mui/icons-material';
 
-// ---- Tab component ----
+// ---- Tab Component ----
 interface TabProps {
   value: string;
   onClick: () => void;
   icon: React.ReactNode;
   isActive: boolean;
-  to?: string; // Optional route
-  style?: React.CSSProperties; // Optional style
+  to?: string;
 }
 
-const Tab: React.FC<TabProps> = ({ value, onClick, icon, isActive, to }) => (
-  <Button
-    onClick={onClick}
-    startIcon={icon}
-    component={to ? Link : 'button'}
-    to={to}
-    sx={{
-      justifyContent: 'flex-start',
-      textTransform: 'none',
-      px: 3,
-      py: 1.5,
-      borderRadius: 2,
-      width: '100%',
-      color: isActive ? '#fff' : '#333',
-      backgroundColor: isActive ? '#1976d2' : 'transparent',
-      '&:hover': {
-        backgroundColor: isActive ? '#1565c0' : '#E4EDFC',
-      },
-      mb: 5,
-      fontWeight: 600,
-      fontSize: '1rem',
-    }}
-  >
-    {value}
-  </Button>
-);
+const Tab: React.FC<TabProps> = ({ value, onClick, icon, isActive, to }) => {
+  const theme = useTheme();
+  return (
+    <Button
+      component={to ? Link : 'button'}
+      to={to}
+      onClick={onClick}
+      startIcon={icon}
+      sx={{
+        justifyContent: 'flex-start',
+        textTransform: 'none',
+        px: 3,
+        py: 1.5,
+        borderRadius: 2,
+        width: '100%',
+        color: isActive ? theme.palette.primary.contrastText : theme.palette.text.primary,
+        backgroundColor: isActive ? theme.palette.primary.main : 'transparent',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          backgroundColor: isActive ? theme.palette.primary.dark : theme.palette.action.hover,
+        },
+        mb: 1.5,
+        fontWeight: 500,
+        fontSize: '0.95rem',
+      }}
+    >
+      {value}
+    </Button>
+  );
+};
 
-// ---- Sidebar component ----
+// ---- Sidebar Component ----
 interface SideNavbarProps {
   sideNavActive: boolean;
   handleSideNavActive: () => void;
@@ -62,6 +65,7 @@ interface SideNavbarProps {
 
 const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavActive }) => {
   const [active, setActive] = useState<string>('dashboard');
+  const theme = useTheme();
 
   const handleActive = (value: string) => {
     setActive(value);
@@ -69,9 +73,8 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
   };
 
   const handleLogout = () => {
-    console.log('Logout clicked');
     localStorage.removeItem('token');
-    window.location.href = '/login'; // Redirect to login page
+    window.location.href = '/login';
     toast.success('Logged out successfully');
   };
 
@@ -80,110 +83,102 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
       variant="persistent"
       open={sideNavActive}
       sx={{
-        width: 450,
+        width: 280,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: 450,
+          width: 280,
           boxSizing: 'border-box',
-          backgroundColor: '#E4EDFC',
-          borderRight: '1px solid #ccc',
+          backgroundColor: theme.palette.background.paper,
+          borderRight: 'none',
           p: 2,
+          transition: 'all 0.3s ease',
         },
       }}
     >
-
-      {/* Sidebar Content */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          width: '80%',
-          py: 4,
+          width: '100%',
+          py: 3,
         }}
       >
-        {/* Logo or title */}
+        {/* Logo/Title */}
         <Typography
-          variant="h6"
+          variant="h5"
           sx={{
             mb: 4,
-            textAlign: 'column',
-            fontWeight: 'bold',
-            color: '#1976d2',
+            fontWeight: 700,
+            color: theme.palette.primary.main,
+            letterSpacing: '-0.025em',
           }}
         >
-          MY LIBRARY DASHBOARD!
+          LIBRARY DASH
         </Typography>
 
         {/* Navigation Tabs */}
-        
-        <Tab
-          value="LIBRARY STATISTICS OVERVIEW"
-          onClick={() => handleActive('dashboard')}
-          icon={<Dashboard sx={{ iconSize: 40}} />}
-          isActive={active === 'dashboard'}
-           to="/dashboard"
-        />
+        <Box sx={{ flexGrow: 1 }}>
+          <Tab
+            value="Overview"
+            onClick={() => handleActive('dashboard')}
+            icon={<Dashboard />}
+            isActive={active === 'dashboard'}
+            to="/dashboard"
+          />
+          <Tab
+            value="Issue Books"
+            onClick={() => handleActive('issue-book')}
+            icon={<Book />}
+            isActive={active === 'issue-book'}
+            to="/dashboard/issue-book"
+          />
+          <Tab
+            value="Return Books"
+            onClick={() => handleActive('return-book')}
+            icon={<LibraryBooks />}
+            isActive={active === 'return-book'}
+            to="/dashboard/return-book"
+          />
+          <Tab
+            value="Manage Books"
+            onClick={() => handleActive('manage-books')}
+            icon={<Book />}
+            isActive={active === 'manage-books'}
+            to="/dashboard/manage-book"
+          />
+          <Tab
+            value="Manage Members"
+            onClick={() => handleActive('manage-members')}
+            icon={<People />}
+            isActive={active === 'manage-members'}
+            to="/dashboard/manage-member"
+          />
+          <Tab
+            value="View Loans"
+            onClick={() => handleActive('view-loans')}
+            icon={<Description />}
+            isActive={active === 'view-loans'}
+            to="/dashboard/view-loan"
+          />
+        </Box>
 
-        <Tab
-          value="ISSUE BOOKS / BORROW BOOKS"
-          onClick={() => handleActive('issue-book')}
-          icon={<Book  sx={{ fontSize: 40}}/>}
-          isActive={active === 'issue-book'}
-          to="/dashboard/issue-book"
-          style={{ fontSize: '5.1rem', fontWeight: 600 , color: '#1976d2'}}
-        />
-
-        <Tab
-          value="RETURN LOANED / BORROWED BOOKS"
-          onClick={() => handleActive('return-book')}
-          icon={<LibraryBooks sx={{ fontSize: 40}}/>}
-          isActive={active === 'return-book'}
-          to="/dashboard/return-book"
-        />
-
-        <Tab
-          value="MANAGE BOOK RECORDS"
-          onClick={() => handleActive('manage-books')}
-          icon={<Book sx={{ fontSize: 40}}/>}
-          isActive={active === 'manage-books'}
-          to="/dashboard/manage-book"
-        />
-
-        <Tab
-          value="MANAGE MEMBERS"
-          onClick={() => handleActive('manage-members')}
-          icon={<People sx={{ fontSize: 40}} />}
-          isActive={active === 'manage-members'}
-          to="/dashboard/manage-member"
-        />
-
-        <Tab
-          value="VIEW LIBRARY BOOK LOANS"
-          onClick={() => handleActive('view-loans')}
-          icon={<Description sx={{ fontSize: 40}}/>}
-          isActive={active === 'view-loans'}
-          to="/dashboard/view-loan"
-        />
-
-        {/* Spacer + Logout */}
-        <Box sx={{ flexGrow: 1 }} />
+        {/* Logout Button */}
         <Button
           onClick={handleLogout}
           startIcon={<Logout />}
           sx={{
-            color: 'white',
             justifyContent: 'flex-start',
             textTransform: 'none',
             px: 3,
             py: 1.5,
-            backgroundColor:'red',
-            fontSize: '1rem',
-            fontWeight: 900,
-            borderRadius: 4,
+            color: theme.palette.error.contrastText,
+            backgroundColor: theme.palette.error.main,
+            fontWeight: 600,
+            borderRadius: 2,
+            transition: 'all 0.3s ease',
             '&:hover': {
-              color: 'red',
-              backgroundColor: '#ffe6e6',
+              backgroundColor: theme.palette.error.dark,
             },
           }}
         >
