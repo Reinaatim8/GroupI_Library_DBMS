@@ -127,18 +127,11 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ sideNavActive, handleSideNavAct
             to="/dashboard"
           />
           <Tab
-            value="Issue Books"
-            onClick={() => handleActive('issue-book')}
-            icon={<Book />}
-            isActive={active === 'issue-book'}
-            to="/dashboard/issue-book"
-          />
-          <Tab
-            value="Return Books"
-            onClick={() => handleActive('return-book')}
+            value="Book Transactions"
+            onClick={() => handleActive('book-transactions')}
             icon={<LibraryBooks />}
-            isActive={active === 'return-book'}
-            to="/dashboard/return-book"
+            isActive={active === 'book-transactions'}
+            to="/dashboard/book-transactions"
           />
           <Tab
             value="Manage Books"

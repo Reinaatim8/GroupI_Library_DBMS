@@ -4,8 +4,7 @@ import LoginPage from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import DashboardPage from './pages/DashboardPage';
 import SignupPage from './pages/SignupPage';
-import IssueBookPage from './pages/IssueBookPage';
-import ReturnBookPage from './pages/ReturnBookPage';
+import BookTransactionsPage from './pages/BookTransactionsPage';
 import ManageBooksPage from './pages/ManageBooksPage';
 import ManageMembersPage from './pages/ManageMembersPage';
 import ViewLoansPage from './pages/ViewLoansPage';
@@ -25,8 +24,7 @@ function App() {
         {/* Protected layout */}
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="issue-book" element={<IssueBookPage />} />
-          <Route path="return-book" element={<ReturnBookPage />} />
+          <Route path="book-transactions" element={<BookTransactionsPage />} />
           <Route path="manage-book" element={<ManageBooksPage />} />
           <Route path="manage-member" element={<ManageMembersPage />} />
           <Route path="view-loan" element={<ViewLoansPage />} />
