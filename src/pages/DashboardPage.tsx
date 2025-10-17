@@ -151,7 +151,7 @@ const DashboardPage: React.FC = () => {
           availableCopies,
           activeLoans: loansRes.data.count ?? loansRes.data.results?.length ?? 0,
           totalMembers: membersRes.data.count ?? membersRes.data.results?.length ?? 0,
-          overdueLoans: overdueRes.data.results?.length ?? 0,
+          overdueLoans: overdueRes.data.count ?? overdueRes.data.results?.length ?? 0,
           totalLibrarians: librariansRes.data.count ?? librariansRes.data.results?.length ?? 0,
           totalAuthors: authorsRes.data.count ?? authorsRes.data.results?.length ?? 0,
         });

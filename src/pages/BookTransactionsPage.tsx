@@ -86,6 +86,10 @@ export default function BookTransactionsPage() {
   const [bulkReturn, setBulkReturn] = useState<number[]>([]);
   const navigate = useNavigate();
   const token = localStorage.getItem('access_token');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
 
   useEffect(() => {
     if (!token) {
@@ -126,6 +130,10 @@ export default function BookTransactionsPage() {
     };
 
     fetchData();
+    const storedIssued = localStorage.getItem('lastIssued');
+    if (storedIssued) {
+      setLastIssued(JSON.parse(storedIssued))
+    };
 
     // Load last returned book from localStorage
     const storedReturned = localStorage.getItem('lastReturnedBook');
@@ -159,10 +167,12 @@ export default function BookTransactionsPage() {
       );
 
       setLastIssued(res.data);
+      localStorage.setItem('LastIssued', JSON.stringify(res.data));
       setMessage('Book successfully issued!');
+      setShowSuccessModal(true); // ✅ Show success modal
       setSelectedMember(null);
       setSelectedBook(null);
-      toast.success('Book issued successfully!');
+     
 
       // Refresh data
       const loansRes = await axios.get(`${API_BASE_URL}/loans/`, { headers: { Authorization: `Bearer ${token}` } });
@@ -174,9 +184,20 @@ export default function BookTransactionsPage() {
       setRecentTransactions(allLoans.sort((a: LoanResponse, b: LoanResponse) => new Date(b.loan_date).getTime() - new Date(a.loan_date).getTime()).slice(0, 5));
     } catch (err: any) {
       console.error('Error issuing book:', err);
-      setError(err.response?.data?.message || 'Failed to issue book');
-      toast.error('Failed to issue book');
+    
+      // Extract backend error message
+      let msg = 'Failed to issue book';
+      if (err.response?.data) {
+        const data = err.response.data;
+        // Take first error message from any field
+        const firstKey = Object.keys(data)[0];
+        msg = Array.isArray(data[firstKey]) ? data[firstKey][0] : String(data[firstKey]);
+      }
+    
+      setErrorMessage(msg);
+      setShowErrorModal(true);
     }
+    
   };
 
   // Group loans by member for return tab
@@ -288,6 +309,90 @@ export default function BookTransactionsPage() {
         <Typography variant="h4" fontWeight={700} mb={4} sx={{ animation: `${fadeIn} 0.5s ease-out` }}>
           Book Transactions
         </Typography>
+        {/* ✅ Issue Success Modal */}
+          <Modal
+            open={showSuccessModal}
+            onClose={() => setShowSuccessModal(false)}
+            closeAfterTransition
+            BackdropComponent={Backdrop}
+            BackdropProps={{ timeout: 300 }}
+          >
+            <Fade in={showSuccessModal}>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  bgcolor: 'background.paper',
+                  boxShadow: 24,
+                  borderRadius: 3,
+                  p: 4,
+                  width: 400,
+                  textAlign: 'center',
+                }}
+              >
+                <Typography variant="h6" fontWeight={600} gutterBottom color="success.main">
+                  ✅ Book Issued Successfully!
+                </Typography>
+                <Typography variant="body1" sx={{ mt: 1 }}>
+                  "{lastIssued?.book_details?.title}" was issued to{' '}
+                  <strong>{lastIssued?.member_details?.name}</strong>.
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+                  Due on: {lastIssued?.due_date}
+                </Typography>
+                <Button
+                  variant="contained"
+                  sx={{ mt: 3, borderRadius: 2 }}
+                  onClick={() => setShowSuccessModal(false)}
+                >
+                  Close
+                </Button>
+              </Box>
+            </Fade>
+          </Modal>
+          {/* ❌ Issue Error Modal */}
+            <Modal
+              open={showErrorModal}
+              onClose={() => setShowErrorModal(false)}
+              closeAfterTransition
+              BackdropComponent={Backdrop}
+              BackdropProps={{ timeout: 300 }}
+            >
+              <Fade in={showErrorModal}>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    bgcolor: "background.paper",
+                    boxShadow: 24,
+                    borderRadius: 3,
+                    p: 4,
+                    width: 400,
+                    textAlign: "center",
+                  }}
+                >
+                  <Typography variant="h6" color="error" fontWeight="bold" gutterBottom>
+                    Borrowing Failed
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {errorMessage || "Unable to issue book. Please try again."}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => setShowErrorModal(false)}
+                  >
+                    Close
+                  </Button>
+                </Box>
+              </Fade>
+            </Modal>
+
+
 
         {/* Quick Stats */}
         <Grid container spacing={2} mb={4}>
@@ -436,12 +541,27 @@ export default function BookTransactionsPage() {
 
               {lastIssued && (
                 <Card sx={{ mt: 4, p: 3, background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', animation: `${fadeIn} 0.6s ease-out` }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <CheckCircle sx={{ color: '#059669' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#065f46' }}>
-                      Last Issued Book
+                  <Card sx={{ mt: 4, p: 3, borderRadius: 3, backgroundColor: 'white' }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <CheckCircle sx={{ color: '#059669' }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#065f46' }}>
+                        Last Issued Book
+                      </Typography>
+                    </Box>
+                    <Typography variant="subtitle2" color="text.secondary">Member</Typography>
+                    <Typography variant="body1" fontWeight={600}>{lastIssued.member_details.name}</Typography>
+
+                    <Typography variant="subtitle2" color="text.secondary" mt={1}>Book</Typography>
+                    <Typography variant="body1" fontWeight={600}>{lastIssued.book_details.title}</Typography>
+
+                    <Typography variant="body2" color="text.secondary" mt={1}>
+                      Loan Date: {lastIssued.loan_date}
                     </Typography>
-                  </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Due Date: {lastIssued.due_date}
+                    </Typography>
+                  </Card>
+
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Member</Typography>
