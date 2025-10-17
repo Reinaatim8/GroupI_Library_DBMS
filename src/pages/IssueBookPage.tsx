@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, TextField, Button, Typography, Card, Chip, Autocomplete, Alert, styled, keyframes
+  Box, TextField, Button, Typography, Card, Chip, Autocomplete, Modal, Backdrop, Fade,Alert, styled, keyframes
 } from '@mui/material';
 import { PersonOutline, MenuBook, CheckCircle } from '@mui/icons-material';
 import axios from 'axios';
@@ -68,6 +68,12 @@ export default function IssueBookPage() {
   const [lastIssued, setLastIssued] = useState<LoanResponse | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+
+
   const navigate = useNavigate();
 
   const token = localStorage.getItem('access_token');
@@ -120,16 +126,47 @@ export default function IssueBookPage() {
       );
 
       setLastIssued(res.data);
-      setMessage('Book successfully issued!');
+      setShowSuccess(true);
       setSelectedMember(null);
       setSelectedBook(null);
-      toast.success('Book issued successfully!');
-    } catch (err: any) {
-      console.error('Error issuing book:', err);
-      setError(err.response?.data?.message || 'Failed to issue book');
-      toast.error('Failed to issue book');
+      
+    }   catch (error) {
+      console.error("Error issuing book:", error);
+    
+      if (axios.isAxiosError(error) && error.response) {
+        const data = error.response.data;
+    
+        //  Check for backend structure and extract a clean message
+        let message = "An unexpected error occurred.";
+    
+        if (data.membership_id && Array.isArray(data.membership_id)) {
+          message = data.membership_id[0];
+        } else if (data.book_id && Array.isArray(data.book_id)) {
+          message = data.book_id[0];
+        } else if (typeof data.detail === "string") {
+          message = data.detail;
+        } else if (typeof data === "string") {
+          message = data;
+        }
+    
+        setErrorMessage(message);
+      } else {
+        setErrorMessage("Network error. Please check your connection.");
+      }
+    
+      // 👇 Show modal and auto-close after a few seconds
+      setShowErrorModal(true);
+      setTimeout(() => setShowErrorModal(false), 3500);
     }
-  };
+    console.log("Error modal state:", showErrorModal, "Message:", errorMessage);
+    console.log("Modal open:", showErrorModal, "Message:", errorMessage);
+    };
+    
+    console.log("Error modal state:", showErrorModal, "Message:", errorMessage);
+    console.log("Modal open:", showErrorModal, "Message:", errorMessage);
+
+
+    
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 900, mx: 'auto', background: '#fafafa', minHeight: '100vh' }}>
@@ -137,13 +174,93 @@ export default function IssueBookPage() {
         <Typography variant="h3" sx={{ fontWeight: 700, color: '#111', mb: 1, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>
           Issue Book
         </Typography>
-        <Typography variant="body1" sx={{ color: '#666' }}>
+        {/* <Typography variant="body1" sx={{ color: '#666' }}>
           Assign books to library members
-        </Typography>
-      </Box>
+        </Typography> */}
+                {/* ✅ Success Modal */}
+                <Modal
+              open={showSuccess}
+              onClose={() => setShowSuccess(false)}
+              closeAfterTransition
+              BackdropComponent={Backdrop}
+              BackdropProps={{ timeout: 300 }}
+            >
+              <Fade in={showSuccess}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: 'background.paper',
+                    boxShadow: 24,
+                    borderRadius: 3,
+                    p: 4,
+                    width: 400,
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography variant="h6" fontWeight={600} gutterBottom color="success.main">
+                    ✅ Book Issued Successfully!
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 1 }}>
+                    "{lastIssued?.book_details?.title}" was issued to{' '}
+                    <strong>{lastIssued?.member_details?.name}</strong>.
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+                    Due on: {lastIssued?.due_date}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    sx={{ mt: 3, borderRadius: 2 }}
+                    onClick={() => setShowSuccess(false)}
+                  >
+                    Close
+                  </Button>
+                </Box>
+              </Fade>
+            </Modal>
 
-      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
-      {message && <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
+              <Modal
+            open={showErrorModal}
+            onClose={() => setShowErrorModal(false)}
+            closeAfterTransition
+            BackdropComponent={Backdrop}
+            BackdropProps={{ timeout: 500 }}
+          >
+            <Fade in={showErrorModal}>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  bgcolor: "background.paper",
+                  boxShadow: 24,
+                  borderRadius: 3,
+                  p: 4,
+                  width: 400,
+                  textAlign: "center",
+                  zIndex: 1301, // ensures it's visible above everything
+                }}
+              >
+                <Typography variant="h6" color="error" fontWeight="bold" gutterBottom>
+                  Borrowing Failed
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  {errorMessage || "Unable to issue book. Please try again."}
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setShowErrorModal(false)}
+                >
+                  Close
+                </Button>
+              </Box>
+            </Fade>
+          </Modal>
+      </Box>
 
       <StyledCard sx={{ mb: 3 }}>
         {/* Member Selection */}
@@ -236,9 +353,12 @@ export default function IssueBookPage() {
             '&:disabled': { background: '#e2e8f0' },
           }}
         >
-          Issue Book
+          ISSUE BOOK
         </Button>
+        
       </StyledCard>
+
+
 
       {lastIssued && (
         <StyledCard sx={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', animationDelay: '0.2s' }}>
