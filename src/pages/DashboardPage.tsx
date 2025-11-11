@@ -183,7 +183,7 @@ const DashboardPage: React.FC = () => {
     { title: 'Available Copies', value: stats.availableCopies, icon: CheckCircle, color: '#10b981' },
     { title: 'Active Loans', value: stats.activeLoans, icon: LocalLibrary, color: '#f59e0b' },
     { title: 'Members', value: stats.totalMembers, icon: People, color: '#8b5cf6' },
-    { title: 'Overdue Loans', value: stats.overdueLoans, icon: Warning, color: stats.overdueLoans > 0 ? '#ef4444' : '#6b7280' },
+    // { title: 'Overdue Loans', value: stats.overdueLoans, icon: Warning, color: stats.overdueLoans > 0 ? '#ef4444' : '#6b7280' },
     { title: 'Librarians', value: stats.totalLibrarians, icon: SupervisorAccount, color: '#06b6d4' },
     { title: 'Authors', value: stats.totalAuthors, icon: Person, color: '#84cc16' },
   ];
@@ -284,23 +284,35 @@ const DashboardPage: React.FC = () => {
           </ResponsiveContainer>
         </ChartCard>
       </Box>
+      <ChartCard>
+  <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>SHORT REPORT PREVIEW</Typography>
 
-      {/* Tables Section */}
+  <Typography variant="subtitle2" sx={{ mb: 1 }}>Library Stats</Typography>
+  <Typography sx={{ fontWeight: 600, mb: 3 }}>Total Books: {stats.totalBooks} Books</Typography>
+  <Typography sx={{ fontWeight: 600, mb: 3 }}>Available Copies: {stats.availableCopies} Books</Typography>
+  <Typography sx={{ fontWeight: 600, mb: 3 }}>Active Loans: {stats.activeLoans} Books</Typography>
+  {/* <Typography>Overdue Loans: {stats.overdueLoans}</Typography> */}
+
+  {/* <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Recent Loans</Typography> */}
+ </ChartCard>
+
+
+      Tables Section
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, 1fr)' }, gap: 4 }}>
         {/* Recent Loans */}
         <ChartCard sx={{ animationDelay: '0.6s' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mb: 3 }}>
+          {/* <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mb: 3 }}>
             Recent Loans
-          </Typography>
+          </Typography> */}
           <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
             <Table size="small">
-              <TableHead>
+              {/* <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Book</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Member</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Status</TableCell>
                 </TableRow>
-              </TableHead>
+              </TableHead> */}
               <TableBody>
                 {recentLoans.map((loan) => (
                   <TableRow key={loan.id}>
@@ -358,13 +370,13 @@ const DashboardPage: React.FC = () => {
           </Typography>
           <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
             <Table size="small">
-              <TableHead>
+              {/* <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Name</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Email</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Joined</TableCell>
                 </TableRow>
-              </TableHead>
+              </TableHead> */}
               <TableBody>
                 {recentMembers.map((member) => (
                   <TableRow key={member.id}>

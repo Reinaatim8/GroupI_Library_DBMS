@@ -18,6 +18,20 @@ import {
 } from '@mui/material';
 import { Search, AlertTriangle, BookOpen, Calendar, Filter } from 'lucide-react';
 
+// ✅ Import Recharts
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+
 interface Loan {
   loan_id: number;
   book_details: {
@@ -45,29 +59,26 @@ export default function ViewLoansPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Assume you store token and role in localStorage after login
   const token = localStorage.getItem('access_token');
-      useEffect(() => {
-        if (!token) {
-          toast.error('Session time Expired! Please Login Again to continue');
-          navigate('/login');
-        }
-      }, [token, navigate]);
-  const role = localStorage.getItem('role'); // 'librarian' or 'member'
-  const memberId = localStorage.getItem('membership_id'); // if applicable
+  useEffect(() => {
+    if (!token) {
+      toast.error('Session Expired! Please login again.');
+      navigate('/login');
+    }
+  }, [token, navigate]);
+
+  const role = localStorage.getItem('role');
+  const memberId = localStorage.getItem('membership_id');
 
   useEffect(() => {
     const fetchLoans = async () => {
       try {
         const response = await axios.get('https://Roy256.pythonanywhere.com/api/loans/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         let fetchedLoans = response.data.results;
 
-        // If user is a member → filter only their loans
         if (role === 'member' && memberId) {
           fetchedLoans = fetchedLoans.filter(
             (loan: Loan) => loan.member_details.membership_id === Number(memberId)
@@ -81,7 +92,6 @@ export default function ViewLoansPage() {
         setLoading(false);
       }
     };
-
     fetchLoans();
   }, [token, role, memberId]);
 
@@ -97,6 +107,13 @@ export default function ViewLoansPage() {
   const overdueCount = loans.filter((loan) => loan.is_overdue).length;
   const onTimeCount = loans.filter((loan) => !loan.is_overdue).length;
 
+  const chartData = [
+    { name: 'On Time', value: onTimeCount },
+    { name: 'Overdue', value: overdueCount },
+  ];
+
+  const COLORS = ['#16a34a', '#dc2626'];
+
   if (loading) {
     return (
       <Box p={4} textAlign="center">
@@ -108,10 +125,10 @@ export default function ViewLoansPage() {
   return (
     <Box p={4} bgcolor="grey.50" minHeight="100vh">
       <Typography variant="h4" fontWeight="bold" mb={4}>
-        {role === 'member' ? 'MY BOOK LOANS' : 'ALL LIBRARY BOOK LOANS / BORROWED BOOKS '}
+        {role === 'member' ? 'MY BOOK LOANS' : 'ALL LIBRARY BOOK LOANS / BORROWED BOOKS'}
       </Typography>
 
-      {/* Statistics */}
+      {/* === Statistics === */}
       <Box display="flex" flexWrap="wrap" gap={2} mb={4}>
         <Card sx={{ p: 3, flex: 1, minWidth: 350 }}>
           <Box display="flex" alignItems="center" gap={2}>
@@ -132,7 +149,7 @@ export default function ViewLoansPage() {
             <Calendar color="#16a34a" size={35} />
             <Box>
               <Typography variant="subtitle2" color="text.secondary">
-                RETURNED IN-TIME/TIME STILL AVAILABLE FOR RETURN
+                RETURNED IN-TIME / STILL ACTIVE
               </Typography>
               <Typography variant="h5" color="success.main" fontWeight="bold">
                 {onTimeCount} BOOKS
@@ -146,7 +163,7 @@ export default function ViewLoansPage() {
             <AlertTriangle color="#dc2626" size={35} />
             <Box>
               <Typography variant="subtitle2" color="text.secondary">
-                OVERDUE/PAST RETURN DATE
+                OVERDUE / PAST RETURN DATE
               </Typography>
               <Typography variant="h5" color="error.main" fontWeight="bold">
                 {overdueCount} BOOKS
@@ -156,7 +173,53 @@ export default function ViewLoansPage() {
         </Card>
       </Box>
 
-      {/* Search & Filter */}
+      {/* === Charts Section === */}
+      <Box display="flex" flexWrap="wrap" justifyContent="center" gap={4} mb={4}>
+        <Card sx={{ p: 3, flex: 1, minWidth: 350, maxWidth: 500 }}>
+          <Typography variant="h6" fontWeight="bold" mb={2}>
+            Loan Status Distribution (Bar Chart)
+          </Typography>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="value" fill="#1976d2">
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+
+        <Card sx={{ p: 3, flex: 1, minWidth: 350, maxWidth: 500 }}>
+          <Typography variant="h6" fontWeight="bold" mb={2}>
+            Loan Status Ratio (Pie Chart)
+          </Typography>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
+      </Box>
+
+      {/* === Search & Filter === */}
       <Card sx={{ p: 3, mb: 4 }}>
         <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
           <TextField
@@ -179,34 +242,34 @@ export default function ViewLoansPage() {
         </Box>
       </Card>
 
-      {/* Table */}
+      {/* === Table === */}
       <Card>
-        <TableContainer sx={{ maxHeight: 600, minWidth:650 }}>
+        <TableContainer sx={{ maxHeight: 600, minWidth: 650 }}>
           <Table stickyHeader>
             <TableHead>
-              <TableRow >
-                <TableCell><Typography fontWeight='bold' color='black'>MEMBER</Typography></TableCell>
-                <TableCell><Typography fontWeight='bold' color='black'>BOOK TITLE</Typography></TableCell>
-                <TableCell><Typography fontWeight='bold' color='black'>AUTHOR</Typography></TableCell>
-                <TableCell><Typography fontWeight='bold' color='black'>LOAN DATE</Typography></TableCell>
-                <TableCell><Typography fontWeight='bold' color='black'>DUE DATE</Typography></TableCell>
-                <TableCell><Typography fontWeight='bold' color='black'>BOOK-LOAN STATUS</Typography></TableCell>
+              <TableRow>
+                <TableCell><Typography fontWeight="bold" color="black">LOAN ID</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold" color="black">MEMBER</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold" color="black">BOOK TITLE</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold" color="black">AUTHOR</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold" color="black">LOAN DATE</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold" color="black">DUE DATE</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold" color="black">BOOK-LOAN STATUS</Typography></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredLoans.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={7} align="center">
                     <Typography>No loans found</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredLoans.map((loan) => (
                   <TableRow key={loan.loan_id}>
+                    <TableCell>{loan.loan_id}</TableCell>
                     <TableCell>
-                      <Typography fontWeight="bold">
-                        {loan.member_details.name}
-                      </Typography>
+                      <Typography fontWeight="bold">{loan.member_details.name}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         {loan.member_details.email}
                       </Typography>
@@ -237,4 +300,3 @@ export default function ViewLoansPage() {
     </Box>
   );
 }
-
