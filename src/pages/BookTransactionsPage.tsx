@@ -3,12 +3,13 @@ import {
   Box, Card, Typography, TextField, InputAdornment, Button, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, Modal, Fade, Backdrop, Tabs, Tab, Autocomplete, Alert,
-  keyframes, Grid, Checkbox
+  keyframes, Checkbox
 } from '@mui/material';
 import {
   Search, PersonOutline, MenuBook, CheckCircle, ArrowBack,
-  LibraryBooks, TrendingUp, Warning, CheckBox, CheckBoxOutlineBlank
+  LibraryBooks, TrendingUp, Warning, CheckBox
 } from '@mui/icons-material';
+import Grid from '@mui/material/Grid';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -395,8 +396,15 @@ export default function BookTransactionsPage() {
 
 
         {/* Quick Stats */}
+        // @ts-ignore
         <Grid container spacing={2} mb={4}>
-          <Grid item xs={12} sm={6} md={3}>
+        // @ts-ignore
+        <div style={{
+                flex: '1 1 25%', // md=3 equivalent
+                minWidth: '200px', // ensures responsiveness
+                boxSizing: 'border-box',
+                padding: '8px' // optional spacing between items
+              }}>
             <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, animation: `${slideIn} 0.4s ease-out` }}>
               <LibraryBooks color="primary" />
               <Box>
@@ -404,8 +412,13 @@ export default function BookTransactionsPage() {
                 <Typography variant="body2" color="text.secondary">Active Loans</Typography>
               </Box>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          </div>
+          <div style={{
+                flex: '1 1 25%', // md=3 equivalent
+                minWidth: '200px', // ensures responsiveness
+                boxSizing: 'border-box',
+                padding: '8px' // optional spacing between items
+              }}>
             <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, animation: `${slideIn} 0.4s ease-out 0.1s both` }}>
               <Warning color="error" />
               <Box>
@@ -413,8 +426,15 @@ export default function BookTransactionsPage() {
                 <Typography variant="body2" color="text.secondary">Overdue Books</Typography>
               </Box>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          </div>
+
+          
+          <div style={{
+              flex: '1 1 25%', // md=3 equivalent
+              minWidth: '200px', // ensures responsiveness
+              boxSizing: 'border-box',
+              padding: '8px' // optional spacing between items
+            }}>
             <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, animation: `${slideIn} 0.4s ease-out 0.2s both` }}>
               <TrendingUp color="success" />
               <Box>
@@ -422,8 +442,14 @@ export default function BookTransactionsPage() {
                 <Typography variant="body2" color="text.secondary">Recent Transactions</Typography>
               </Box>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          </div>
+          
+          <div style={{
+                flex: '1 1 25%', // md=3 equivalent
+                minWidth: '200px', // ensures responsiveness
+                boxSizing: 'border-box',
+                padding: '8px' // optional spacing between items
+              }}>
             <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, animation: `${slideIn} 0.4s ease-out 0.3s both` }}>
               <CheckCircle color="info" />
               <Box>
@@ -431,7 +457,7 @@ export default function BookTransactionsPage() {
                 <Typography variant="body2" color="text.secondary">Books Returned Today</Typography>
               </Box>
             </Card>
-          </Grid>
+          </div>
         </Grid>
 
         <Card sx={{ borderRadius: 2, animation: `${fadeIn} 0.6s ease-out` }}>
@@ -563,22 +589,46 @@ export default function BookTransactionsPage() {
                   </Card>
 
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                  
+                    <div style={{
+                            flex: '1 1 25%', // md=3 equivalent
+                            minWidth: '200px', // ensures responsiveness
+                            boxSizing: 'border-box',
+                            padding: '8px' // optional spacing between items
+                          }}>
                       <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Member</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 600 }}>{lastIssued.member_details.name}</Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </div>
+                 
+                    <div style={{
+                          flex: '1 1 25%', // md=3 equivalent
+                          minWidth: '200px', // ensures responsiveness
+                          boxSizing: 'border-box',
+                          padding: '8px' // optional spacing between items
+                        }}>
                       <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Book</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 600 }}>{lastIssued.book_details.title}</Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </div>
+                    
+                    <div style={{
+                          flex: '1 1 25%', // md=3 equivalent
+                          minWidth: '200px', // ensures responsiveness
+                          boxSizing: 'border-box',
+                          padding: '8px' // optional spacing between items
+                        }}>
                       <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Loan Date</Typography>
                       <Typography variant="body1">{lastIssued.loan_date}</Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </div>
+                    // @ts-ignore
+                    <div style={{
+                          flex: '1 1 25%', // md=3 equivalent
+                          minWidth: '200px', // ensures responsiveness
+                          boxSizing: 'border-box',
+                          padding: '8px' // optional spacing between items
+                        }}>
                       <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Due Date</Typography>
                       <Typography variant="body1" sx={{ color: '#dc2626', fontWeight: 600 }}>{lastIssued.due_date}</Typography>
-                    </Grid>
+                    </div>
                   </Grid>
                 </Card>
               )}
