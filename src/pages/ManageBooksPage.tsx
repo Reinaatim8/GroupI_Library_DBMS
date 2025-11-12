@@ -309,7 +309,7 @@ export default function ManageBooksPage() {
           />
           <TextField
             fullWidth
-            label="ISBN (optional)"
+            label="ISBN "
             value={newBook.isbn}
             onChange={(e) => setNewBook({ ...newBook, isbn: e.target.value })}
             sx={{ mb: 3 }}
