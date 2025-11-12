@@ -377,7 +377,7 @@ export default function BookTransactionsPage() {
                   }}
                 >
                   <Typography variant="h6" color="error" fontWeight="bold" gutterBottom>
-                    Borrowing Failed
+                    Borrowing Failed! Please return Overdue book first before borrowing.
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 2 }}>
                     {errorMessage || "Unable to issue book. Please try again."}
@@ -396,9 +396,9 @@ export default function BookTransactionsPage() {
 
 
         {/* Quick Stats */}
-        // @ts-ignore
+        
         <Grid container spacing={2} mb={4}>
-        // @ts-ignore
+        
         <div style={{
                 flex: '1 1 25%', // md=3 equivalent
                 minWidth: '200px', // ensures responsiveness
@@ -619,7 +619,7 @@ export default function BookTransactionsPage() {
                       <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>Loan Date</Typography>
                       <Typography variant="body1">{lastIssued.loan_date}</Typography>
                     </div>
-                    // @ts-ignore
+                    
                     <div style={{
                           flex: '1 1 25%', // md=3 equivalent
                           minWidth: '200px', // ensures responsiveness

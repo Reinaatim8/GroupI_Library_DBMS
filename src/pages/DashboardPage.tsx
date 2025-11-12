@@ -1,7 +1,7 @@
 // src/DashboardPage.tsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Typography, CircularProgress, styled, keyframes, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip } from '@mui/material';
+import { Box, Typography, CircularProgress, styled, keyframes, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,ListItem,List, Chip } from '@mui/material';
 import { MenuBook, CheckCircle, LocalLibrary, People, SupervisorAccount, Person } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -287,25 +287,49 @@ const DashboardPage: React.FC = () => {
       <ChartCard>
   <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>SHORT REPORT PREVIEW</Typography>
 
-  <Typography variant="subtitle2" sx={{ mb: 1 }}>Library Stats</Typography>
-  <Typography sx={{ fontWeight: 600, mb: 3 }}>Total Books: {stats.totalBooks} Books</Typography>
-  <Typography sx={{ fontWeight: 600, mb: 3 }}>Available Copies: {stats.availableCopies} Books</Typography>
-  <Typography sx={{ fontWeight: 600, mb: 3 }}>Active Loans: {stats.activeLoans} Books</Typography>
+  
+<Box sx={{ mb: 3 }}>
+  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+    Library Summary — Updated Every Time a Book Transaction Occurs
+  </Typography>
+
+  <List sx={{ listStyleType: 'disc', pl: 4 }}>
+    <ListItem sx={{ display: 'list-item', lineHeight: 1.7 }}>
+      The library currently holds a total of <strong>{stats.totalBooks} </strong> books 
+      across all genres. Out of these, approximately <strong>{stats.availableCopies} </strong> 
+      copies are available for borrowing, while <strong>{stats.activeLoans} </strong>  
+      are currently on loan to members.
+    </ListItem>
+
+    <ListItem sx={{ display: 'list-item', lineHeight: 1.7 }}>
+      This report highlights the active engagement of library members and the 
+      continued circulation of books. A healthy number of available copies indicates 
+      good inventory management, while the active loans reflect consistent readership activity.
+    </ListItem>
+
+    <ListItem sx={{ display: 'list-item', lineHeight: 1.7 }}>
+      Regular monitoring of these figures helps the library maintain an efficient 
+      lending process and ensures that popular titles remain accessible to readers.
+    </ListItem>
+  </List>
+
+
+</Box>
   {/* <Typography>Overdue Loans: {stats.overdueLoans}</Typography> */}
 
   {/* <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Recent Loans</Typography> */}
  </ChartCard>
 
 
-      Tables Section
+      
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, 1fr)' }, gap: 4 }}>
         {/* Recent Loans */}
-        <ChartCard sx={{ animationDelay: '0.6s' }}>
+        {/* <ChartCard sx={{ animationDelay: '0.6s' }}>
           {/* <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mb: 3 }}>
             Recent Loans
           </Typography> */}
-          <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
-            <Table size="small">
+          {/* <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>  */}
+            {/* <Table size="small"> */}
               {/* <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Book</TableCell>
@@ -313,7 +337,7 @@ const DashboardPage: React.FC = () => {
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Status</TableCell>
                 </TableRow>
               </TableHead> */}
-              <TableBody>
+              {/* <TableBody>
                 {recentLoans.map((loan) => (
                   <TableRow key={loan.id}>
                     <TableCell sx={{ borderBottom: 'none', py: 1 }}>{loan.book_title}</TableCell>
@@ -331,12 +355,12 @@ const DashboardPage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody>
-            </Table>
+              </TableBody> */}
+            {/* </Table>
           </TableContainer>
-        </ChartCard>
+        </ChartCard> */}
 
-        {/* Top Borrowed Books */}
+        {/* Top Borrowed Books
         <ChartCard sx={{ animationDelay: '0.7s' }}>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mb: 3 }}>
             Top Borrowed Books
@@ -361,15 +385,15 @@ const DashboardPage: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
-        </ChartCard>
+        </ChartCard> */}
 
         {/* Recent Members */}
-        <ChartCard sx={{ animationDelay: '0.8s' }}>
+        {/* <ChartCard sx={{ animationDelay: '0.8s' }}>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#111', mb: 3 }}>
             Recent Members
           </Typography>
           <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
-            <Table size="small">
+            <Table size="small"> */}
               {/* <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Name</TableCell>
@@ -377,7 +401,7 @@ const DashboardPage: React.FC = () => {
                   <TableCell sx={{ fontWeight: 600, color: '#666', borderBottom: 'none' }}>Joined</TableCell>
                 </TableRow>
               </TableHead> */}
-              <TableBody>
+              {/* <TableBody>
                 {recentMembers.map((member) => (
                   <TableRow key={member.id}>
                     <TableCell sx={{ borderBottom: 'none', py: 1 }}>{member.name}</TableCell>
@@ -385,10 +409,10 @@ const DashboardPage: React.FC = () => {
                     <TableCell sx={{ borderBottom: 'none', py: 1 }}>{new Date(member.join_date).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </ChartCard>
+              </TableBody> */}
+            {/* </Table>
+          </TableContainer> */}
+        {/* </ChartCard> */}
       </Box>
     </Box>
   );
